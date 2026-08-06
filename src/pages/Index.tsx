@@ -18,6 +18,7 @@ const Index = () => {
   const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false);
   const [showHazards, setShowHazards] = useState<boolean>(true);
   const [selectedMunicipalityCoord, setSelectedMunicipalityCoord] = useState<[number, number] | null>(null);
+  const [iconSize, setIconSize] = useState<number>(40);
 
   // Load initial plan from localStorage or defaults
   useEffect(() => {
@@ -26,7 +27,7 @@ const Index = () => {
       if (savedData) {
         const parsed: PrepositionPlan = JSON.parse(savedData);
         if (parsed.title) setPlanTitle(parsed.title);
-        if (parsed.markers && parsed.markers.length > 0) {
+        if (parsed.markers) {
           setMarkers(parsed.markers);
           return;
         }
@@ -34,7 +35,7 @@ const Index = () => {
     } catch (e) {
       console.error('Failed to parse saved plan:', e);
     }
-    // Fallback default markers
+    // Fallback initial markers for first time
     setMarkers(INITIAL_MARKERS);
   }, []);
 
@@ -122,7 +123,7 @@ const Index = () => {
     showSuccess('Marker removed from plan.');
   };
 
-  // Save full preposition plan to localStorage + simulate backend save
+  // Save full preposition plan to localStorage
   const handleSavePlan = () => {
     const plan: PrepositionPlan = {
       id: `plan-${Date.now()}`,
@@ -135,19 +136,18 @@ const Index = () => {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
-      showSuccess(`Plan "${planTitle}" saved successfully with ${markers.length} asset entries!`);
+      showSuccess(`Plan "${planTitle}" saved with ${markers.length} asset entries!`);
     } catch (e) {
       showError('Failed to save plan to storage.');
     }
   };
 
-  // Reset Plan to default
+  // Reset Plan to BLANK
   const handleResetPlan = () => {
-    if (window.confirm('Reset plan markers to initial setup for Camarines Norte?')) {
-      setMarkers(INITIAL_MARKERS);
-      setPlanTitle('Typhoon Preparedness Plan - Camarines Norte');
+    if (window.confirm('Reset map? This will clear all placed markers and start with a completely blank map.')) {
+      setMarkers([]);
       localStorage.removeItem(STORAGE_KEY);
-      showSuccess('Prepositioning plan reset to defaults.');
+      showSuccess('Prepositioning map cleared. Starting blank.');
     }
   };
 
@@ -192,6 +192,8 @@ const Index = () => {
         showHazards={showHazards}
         setShowHazards={setShowHazards}
         onToggleSummary={() => setIsSummaryOpen(true)}
+        iconSize={iconSize}
+        setIconSize={setIconSize}
       />
 
       {/* Main Workspace Layout: Sidebar + Leaflet Map */}
@@ -209,6 +211,7 @@ const Index = () => {
             onMarkerDragEnd={handleMarkerDragEnd}
             showHazards={showHazards}
             selectedMunicipalityCoord={selectedMunicipalityCoord}
+            baseIconSize={iconSize}
           />
         </main>
       </div>

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle } from 'lucide-react';
+import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle, ZoomIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface NavbarProps {
   planTitle: string;
@@ -17,6 +18,8 @@ interface NavbarProps {
   showHazards: boolean;
   setShowHazards: (val: boolean) => void;
   onToggleSummary: () => void;
+  iconSize: number;
+  setIconSize: (size: number) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   showHazards,
   setShowHazards,
   onToggleSummary,
+  iconSize,
+  setIconSize,
 }) => {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-md z-20">
@@ -93,6 +98,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center space-x-2">
+        {/* Icon Size Selector */}
+        <div className="flex items-center space-x-1.5 bg-slate-800/90 px-2 py-1 rounded border border-slate-700 text-xs">
+          <ZoomIn className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-300 hidden sm:inline text-[11px]">Icon Size:</span>
+          <Select value={iconSize.toString()} onValueChange={(val) => setIconSize(parseInt(val))}>
+            <SelectTrigger className="h-6 w-20 text-[11px] bg-slate-900 border-slate-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-slate-800 text-white text-xs">
+              <SelectItem value="30">Small (30px)</SelectItem>
+              <SelectItem value="40">Medium (40px)</SelectItem>
+              <SelectItem value="52">Large (52px)</SelectItem>
+              <SelectItem value="64">X-Large (64px)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Button
           variant={showHazards ? 'default' : 'outline'}
           size="sm"
@@ -102,9 +124,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600' 
               : 'border-slate-700 text-slate-300 hover:text-white bg-slate-800'
           }`}
+          title="Toggle Flood, Storm Surge, and Landslide Risk Polygons"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
-          <span>{showHazards ? 'Hide Hazard Overlay' : 'Show Hazard Overlay'}</span>
+          <span className="hidden md:inline">{showHazards ? 'Hide Hazard Overlay' : 'Show Hazard Overlay'}</span>
         </Button>
 
         <Button
@@ -123,9 +146,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           size="sm"
           onClick={onResetPlan}
           className="h-8 text-xs font-medium gap-1.5 border-slate-700 text-slate-300 hover:bg-red-900/40 hover:text-red-300 bg-slate-800"
+          title="Clear all prepositioned markers to start blank"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Reset</span>
+          <span className="hidden sm:inline">Reset Map</span>
         </Button>
 
         <Button

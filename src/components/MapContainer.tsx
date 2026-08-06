@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { PrepositionedMarker, ResourceTypeId } from '@/types/disaster';
@@ -11,6 +11,7 @@ interface MapContainerProps {
   onMarkerDragEnd: (id: string, lat: number, lng: number) => void;
   showHazards: boolean;
   selectedMunicipalityCoord: [number, number] | null;
+  baseIconSize: number;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -20,11 +21,13 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onMarkerDragEnd,
   showHazards,
   selectedMunicipalityCoord,
+  baseIconSize,
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const leafletMarkersRef = useRef<Map<string, L.Marker>>(new Map());
   const hazardPolygonsRef = useRef<L.Polygon[]>([]);
+  const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_ZOOM);
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -44,6 +47,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
+    map.on('zoomend', () => {
+      setCurrentZoom(map.getZoom());
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -57,7 +64,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   // Handle selected municipality pan/flyTo
   useEffect(() => {
     if (selectedMunicipalityCoord && mapRef.current) {
-      mapRef.current.flyTo(selectedMunicipalityCoord, 13, {
+      mapRef.current.flyTo(selectedMunicipalityCoord, 14, {
         duration: 1.2,
       });
     }
@@ -89,8 +96,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
         polygon.bindTooltip(
           `<div class="font-sans">
-            <strong class="text-xs uppercase tracking-wide block">${hazard.name}</strong>
-            <span class="text-[11px] text-slate-600">${hazard.description}</span>
+            <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">${hazard.name}</strong>
+            <span class="text-[11px] text-slate-700">${hazard.description}</span>
           </div>`,
           { sticky: true }
         );
@@ -99,6 +106,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       });
     }
   }, [showHazards]);
+
+  // Dynamic zoom factor multiplier (slightly expands icons when zooming in deep)
+  const zoomFactor = Math.max(0.75, Math.min(1.5, 1 + (currentZoom - DEFAULT_ZOOM) * 0.08));
+  const effectiveSize = Math.round(baseIconSize * zoomFactor);
 
   // Update Markers on Map
   useEffect(() => {
@@ -118,7 +129,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     // Add or update markers
     markers.forEach((markerData) => {
       const existing = leafletMarkersRef.current.get(markerData.id);
-      const icon = createMarkerIcon(markerData.resourceTypeId, markerData.title, markerData.quantity);
+      const icon = createMarkerIcon(
+        markerData.resourceTypeId, 
+        markerData.title, 
+        markerData.quantity,
+        effectiveSize
+      );
 
       if (existing) {
         existing.setLatLng([markerData.lat, markerData.lng]);
@@ -143,7 +159,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         leafletMarkersRef.current.set(markerData.id, leafletMarker);
       }
     });
-  }, [markers, onMarkerSelect, onMarkerDragEnd]);
+  }, [markers, effectiveSize, onMarkerSelect, onMarkerDragEnd]);
 
   // Handle Drag Over & Drop onto map coordinates
   const handleDragOver = (e: React.DragEvent) => {
