@@ -12,7 +12,11 @@ export type ResourceTypeId =
   | 'icp' 
   | 'staging_area' 
   | 'camp' 
-  | 'base';
+  | 'base'
+  | 'helibase'
+  | 'helispot'
+  | 'eoc'
+  | 'medical_post';
 
 export interface ResourceDefinition {
   id: ResourceTypeId;

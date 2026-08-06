@@ -146,39 +146,72 @@ export function createMarkerIcon(resourceTypeId: ResourceTypeId, title: string, 
 
   let markerContentHtml = '';
 
-  // Standard ICS Facility Map Symbology
+  // Standard ICS Cartographic Facility Symbology (FEMA / NIMS)
   if (resourceTypeId === 'icp') {
-    // Incident Command Post: Circle divided horizontally (Top Blue, Bottom White with ICP text)
+    // Incident Command Post: Split Circle (Top Blue, Bottom White with black "ICP" text)
     markerContentHtml = `
       <div class="w-10 h-10 rounded-full border-2 border-slate-900 shadow-2xl overflow-hidden bg-white flex flex-col items-center justify-center relative">
         <div class="w-full h-1/2 bg-blue-600"></div>
         <div class="w-full h-1/2 bg-white"></div>
-        <span class="absolute text-[11px] font-extrabold text-slate-900 tracking-tighter">ICP</span>
+        <span class="absolute text-[11px] font-extrabold text-slate-950 tracking-tighter">ICP</span>
       </div>
     `;
   } else if (resourceTypeId === 'staging_area') {
-    // Staging Area: Circle with bold "S"
+    // Staging Area: Circle with white background & black letter "S"
     markerContentHtml = `
-      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-lg shadow-2xl">
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-lg shadow-2xl">
         S
       </div>
     `;
   } else if (resourceTypeId === 'camp') {
-    // Camp Facility: Circle with bold "C"
+    // Camp Facility: Circle with white background & black letter "C"
     markerContentHtml = `
-      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-2xl">
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-lg shadow-2xl">
         C
       </div>
     `;
   } else if (resourceTypeId === 'base') {
-    // Base Facility: Circle with bold "B"
+    // Base Facility: Circle with white background & black letter "B"
     markerContentHtml = `
-      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-lg shadow-2xl">
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-lg shadow-2xl">
         B
       </div>
     `;
+  } else if (resourceTypeId === 'helibase') {
+    // Helibase: Circle with white background, black letter "H" and 3 rotor blades radiating
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center relative shadow-2xl overflow-visible">
+        <!-- 3 Helicopter Rotor Blades -->
+        <div class="absolute -top-1 w-0.5 h-3 bg-slate-900"></div>
+        <div class="absolute -bottom-1 -left-0.5 w-3 h-0.5 bg-slate-900 transform -rotate-30"></div>
+        <div class="absolute -bottom-1 -right-0.5 w-3 h-0.5 bg-slate-900 transform rotate-30"></div>
+        <span class="font-black text-lg text-slate-950 z-10">H</span>
+      </div>
+    `;
+  } else if (resourceTypeId === 'helispot') {
+    // Helispot: Circle with white background & black text "H1"
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base shadow-2xl">
+        H1
+      </div>
+    `;
+  } else if (resourceTypeId === 'medical_post') {
+    // Medical Post: Circle with white background, black letter "M" with red cross accent
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base relative shadow-2xl">
+        <span>M</span>
+        <span class="absolute top-0.5 right-1 w-2 h-2 rounded-full bg-red-600"></span>
+      </div>
+    `;
+  } else if (resourceTypeId === 'eoc') {
+    // Emergency Operations Center: Circle with white background & black text "EOC"
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-[10px] tracking-tight shadow-2xl">
+        EOC
+      </div>
+    `;
   } else {
-    // Pure icon without circle background
+    // Pure icon without circle background for vehicles and personnel
     const enhancedSvg = ENHANCED_ICON_SVGS[resourceTypeId];
 
     markerContentHtml = `

@@ -107,13 +107,13 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     agency: 'AFP'
   },
 
-  // ICS Standard Facilities (FEMA / NIMS Guidelines)
+  // ICS Standard Facilities (FEMA / NIMS Cartographic Guidelines)
   {
     id: 'icp',
     name: 'Incident Command Post (ICP)',
     category: 'facility',
     iconName: 'ICS_ICP',
-    color: '#2563eb', // ICS Blue/White standard
+    color: '#2563eb',
     badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
     description: 'FEMA ICS Standard: Split Circle with ICP designation',
     defaultCallsign: 'CAM-NORTE-ICP'
@@ -123,9 +123,9 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Staging Area (S)',
     category: 'facility',
     iconName: 'ICS_S',
-    color: '#eab308', // ICS Yellow standard
+    color: '#eab308',
     badgeBg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    description: 'FEMA ICS Standard: Circle with letter S',
+    description: 'FEMA ICS Standard: White circle with black letter S',
     defaultCallsign: 'STAGING-NORTH'
   },
   {
@@ -133,9 +133,9 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Camp Facility (C)',
     category: 'facility',
     iconName: 'ICS_C',
-    color: '#16a34a', // ICS Green standard
+    color: '#16a34a',
     badgeBg: 'bg-green-100 text-green-800 border-green-300',
-    description: 'FEMA ICS Standard: Circle with letter C',
+    description: 'FEMA ICS Standard: White circle with black letter C',
     defaultCallsign: 'BASE-CAMP-1'
   },
   {
@@ -143,10 +143,50 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Base Facility (B)',
     category: 'facility',
     iconName: 'ICS_B',
-    color: '#0284c7', // ICS Blue-Gray standard
+    color: '#0284c7',
     badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
-    description: 'FEMA ICS Standard: Circle with letter B',
+    description: 'FEMA ICS Standard: White circle with black letter B',
     defaultCallsign: 'LOGISTICS-BASE'
+  },
+  {
+    id: 'helibase',
+    name: 'Helibase (H)',
+    category: 'facility',
+    iconName: 'ICS_H',
+    color: '#8b5cf6',
+    badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+    description: 'FEMA ICS Standard: White circle with black letter H and rotor blades',
+    defaultCallsign: 'MAIN-HELIBASE'
+  },
+  {
+    id: 'helispot',
+    name: 'Helispot (H1)',
+    category: 'facility',
+    iconName: 'ICS_H1',
+    color: '#a855f7',
+    badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+    description: 'FEMA ICS Standard: White circle with black letter H1',
+    defaultCallsign: 'HELISPOT-ALPHA'
+  },
+  {
+    id: 'medical_post',
+    name: 'Medical Post (M)',
+    category: 'facility',
+    iconName: 'ICS_M',
+    color: '#ec4899',
+    badgeBg: 'bg-pink-100 text-pink-800 border-pink-300',
+    description: 'FEMA ICS Standard: White circle with black letter M & cross',
+    defaultCallsign: 'FIELD-MEDICAL-1'
+  },
+  {
+    id: 'eoc',
+    name: 'Emergency Operations Center (EOC)',
+    category: 'facility',
+    iconName: 'ICS_EOC',
+    color: '#0f172a',
+    badgeBg: 'bg-slate-200 text-slate-800 border-slate-400',
+    description: 'Multi-agency regional coordination center',
+    defaultCallsign: 'PDRRMO-EOC'
   }
 ];
 

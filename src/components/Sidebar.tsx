@@ -27,39 +27,71 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
   };
 
   const renderIconBadge = (item: ResourceDefinition) => {
-    // Authentic ICS Symbols rendering
+    // Authentic ICS Cartographic Symbols (FEMA / NIMS)
     if (item.id === 'icp') {
       return (
-        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-md">
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-md">
           <div className="w-full h-1/2 bg-blue-600"></div>
           <div className="w-full h-1/2 bg-white"></div>
-          <span className="absolute text-[10px] font-black text-slate-900 tracking-tight">ICP</span>
+          <span className="absolute text-[10px] font-black text-slate-950 tracking-tight">ICP</span>
         </div>
       );
     }
     if (item.id === 'staging_area') {
       return (
-        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md">
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md">
           S
         </div>
       );
     }
     if (item.id === 'camp') {
       return (
-        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-md">
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md">
           C
         </div>
       );
     }
     if (item.id === 'base') {
       return (
-        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-base shrink-0 shadow-md">
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md">
           B
         </div>
       );
     }
+    if (item.id === 'helibase') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md relative">
+          <div className="absolute -top-1 w-0.5 h-2.5 bg-slate-900"></div>
+          <div className="absolute -bottom-0.5 -left-0.5 w-2.5 h-0.5 bg-slate-900 transform -rotate-30"></div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-0.5 bg-slate-900 transform rotate-30"></div>
+          <span>H</span>
+        </div>
+      );
+    }
+    if (item.id === 'helispot') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-md">
+          H1
+        </div>
+      );
+    }
+    if (item.id === 'medical_post') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-sm shrink-0 relative shadow-md">
+          <span>M</span>
+          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-600"></span>
+        </div>
+      );
+    }
+    if (item.id === 'eoc') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white text-slate-950 flex items-center justify-center font-black text-[9px] shrink-0 shadow-md">
+          EOC
+        </div>
+      );
+    }
 
-    // Pure icon without circle background
+    // Pure icon without circle background for vehicles and personnel
     const enhancedSvg = ENHANCED_ICON_SVGS[item.id];
 
     return (
@@ -191,9 +223,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
         <div className="font-bold text-slate-300">FEMA / ICS Map Legend:</div>
         <div className="grid grid-cols-2 gap-1 text-[10px]">
           <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-600 border border-white inline-block"></span> ICP (Split Blue/White)</div>
-          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 text-black font-bold text-[8px] flex items-center justify-center">S</span> Staging Area</div>
-          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600 text-white font-bold text-[8px] flex items-center justify-center">C</span> Camp</div>
-          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-sky-700 text-white font-bold text-[8px] flex items-center justify-center">B</span> Base</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">S</span> Staging Area</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">C</span> Camp</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">B</span> Base</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">H</span> Helibase</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">H1</span> Helispot</div>
         </div>
       </div>
     </aside>
