@@ -252,6 +252,24 @@ const Index = () => {
     showSuccess('Preposition Plan exported to JSON.');
   };
 
+  const handleSelectAreaFromList = (area: OperationalArea) => {
+    setSelectedArea(area);
+    setIsAreaModalOpen(true);
+    if (area.points && area.points.length > 0) {
+      const firstPt = area.points[0];
+      setSelectedMunicipalityCoord([firstPt[0], firstPt[1]]);
+    }
+  };
+
+  const handleSelectRouteFromList = (route: TacticalRoute) => {
+    setSelectedRoute(route);
+    setIsRouteModalOpen(true);
+    if (route.points && route.points.length > 0) {
+      const firstPt = route.points[0];
+      setSelectedMunicipalityCoord([firstPt[0], firstPt[1]]);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans">
       {/* Top Navbar Header */}
@@ -289,14 +307,8 @@ const Index = () => {
           onMunicipalitySelect={(lat, lng) => setSelectedMunicipalityCoord([lat, lng])}
           areas={areas}
           routes={routes}
-          onSelectArea={(a) => {
-            setSelectedArea(a);
-            setIsAreaModalOpen(true);
-          }}
-          onSelectRoute={(r) => {
-            setSelectedRoute(r);
-            setIsRouteModalOpen(true);
-          }}
+          onSelectArea={handleSelectAreaFromList}
+          onSelectRoute={handleSelectRouteFromList}
           onDeleteArea={handleDeleteArea}
           onDeleteRoute={handleDeleteRoute}
         />

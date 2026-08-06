@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { createMarkerIcon } from '@/utils/leafletIcons';
+import { Locate } from 'lucide-react';
 
 interface MapContainerProps {
   markers: PrepositionedMarker[];
@@ -53,34 +54,47 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      center: CAMARINES_NORTE_CENTER,
-      zoom: DEFAULT_ZOOM,
-      zoomControl: false,
-    });
+    try {
+      const map = L.map(containerRef.current, {
+        center: CAMARINES_NORTE_CENTER,
+        zoom: DEFAULT_ZOOM,
+        zoomControl: false,
+      });
 
-    L.control.zoom({ position: 'topright' }).addTo(map);
+      L.control.zoom({ position: 'topright' }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
 
-    map.on('zoomend', () => {
-      setCurrentZoom(map.getZoom());
-    });
+      map.on('zoomend', () => {
+        setCurrentZoom(map.getZoom());
+      });
 
-    // Draft layer group for interactive drawing
-    draftLayerRef.current = L.layerGroup().addTo(map);
+      // Draft layer group for interactive drawing
+      draftLayerRef.current = L.layerGroup().addTo(map);
 
-    mapRef.current = map;
+      mapRef.current = map;
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
+      // Handle ResizeObserver to keep leaflet container sized correctly
+      const resizeObserver = new ResizeObserver(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+        }
+      };
+    } catch (err) {
+      console.error('Error initializing Leaflet map:', err);
+    }
   }, []);
 
   // Handle map clicks when in drawing mode
@@ -108,51 +122,53 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     draftGroup.clearLayers();
 
     if (drawMode !== 'none' && draftPoints.length > 0) {
-      // Draw point markers
-      draftPoints.forEach((pt, index) => {
-        if (!pt || pt.length !== 2 || isNaN(pt[0]) || isNaN(pt[1])) return;
-        const circle = L.circleMarker(pt, {
-          radius: 5,
-          color: '#ffffff',
-          fillColor: drawMode === 'area' ? '#3b82f6' : '#10b981',
-          fillOpacity: 1,
-          weight: 2,
+      try {
+        // Draw point markers
+        draftPoints.forEach((pt, index) => {
+          if (!pt || pt.length !== 2 || isNaN(pt[0]) || isNaN(pt[1])) return;
+          const circle = L.circleMarker(pt, {
+            radius: 5,
+            color: '#ffffff',
+            fillColor: drawMode === 'area' ? '#3b82f6' : '#10b981',
+            fillOpacity: 1,
+            weight: 2,
+          });
+          circle.bindTooltip(`Pt ${index + 1}`, { 
+            permanent: true, 
+            direction: 'top', 
+            className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow' 
+          });
+          draftGroup.addLayer(circle);
         });
-        circle.bindTooltip(`Pt ${index + 1}`, { 
-          permanent: true, 
-          direction: 'top', 
-          className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow' 
-        });
-        draftGroup.addLayer(circle);
-      });
 
-      if (drawMode === 'route' && draftPoints.length >= 2) {
-        const polyline = L.polyline(draftPoints, {
-          color: '#10b981',
-          weight: 4,
-          dashArray: '6, 6',
-        });
-        draftGroup.addLayer(polyline);
-      } else if (drawMode === 'area') {
-        if (draftPoints.length === 2) {
-          // 2 points preview as a polyline line segment
+        if (drawMode === 'route' && draftPoints.length >= 2) {
           const polyline = L.polyline(draftPoints, {
-            color: '#3b82f6',
-            weight: 3,
-            dashArray: '4, 4',
+            color: '#10b981',
+            weight: 4,
+            dashArray: '6, 6',
           });
           draftGroup.addLayer(polyline);
-        } else if (draftPoints.length >= 3) {
-          // 3+ points preview as a polygon
-          const polygon = L.polygon(draftPoints, {
-            color: '#3b82f6',
-            fillColor: '#3b82f6',
-            fillOpacity: 0.25,
-            weight: 2,
-            dashArray: '4, 4',
-          });
-          draftGroup.addLayer(polygon);
+        } else if (drawMode === 'area') {
+          if (draftPoints.length === 2) {
+            const polyline = L.polyline(draftPoints, {
+              color: '#3b82f6',
+              weight: 3,
+              dashArray: '4, 4',
+            });
+            draftGroup.addLayer(polyline);
+          } else if (draftPoints.length >= 3) {
+            const polygon = L.polygon(draftPoints, {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.25,
+              weight: 2,
+              dashArray: '4, 4',
+            });
+            draftGroup.addLayer(polygon);
+          }
         }
+      } catch (err) {
+        console.error('Error drawing draft shape:', err);
       }
     }
   }, [drawMode, draftPoints]);
@@ -182,15 +198,23 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       const existing = savedAreaPolygonsRef.current.get(areaData.id);
 
-      if (existing) {
-        existing.setLatLngs(validPoints as L.LatLngExpression[]);
-        existing.setStyle({
-          color: areaData.color || '#3b82f6',
-          fillColor: areaData.color || '#3b82f6',
-          fillOpacity: areaData.opacity ?? 0.3,
-        });
-      } else {
-        try {
+      try {
+        if (existing) {
+          existing.setLatLngs(validPoints as L.LatLngExpression[]);
+          existing.setStyle({
+            color: areaData.color || '#3b82f6',
+            fillColor: areaData.color || '#3b82f6',
+            fillOpacity: areaData.opacity ?? 0.3,
+          });
+          // Re-bind click event cleanly
+          existing.off('click');
+          existing.on('click', (e: L.LeafletMouseEvent) => {
+            if (e.originalEvent) {
+              L.DomEvent.stopPropagation(e.originalEvent);
+            }
+            if (onAreaSelect) onAreaSelect(areaData);
+          });
+        } else {
           const polygon = L.polygon(validPoints as L.LatLngExpression[], {
             color: areaData.color || '#3b82f6',
             fillColor: areaData.color || '#3b82f6',
@@ -206,15 +230,17 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' }
           );
 
-          polygon.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
+          polygon.on('click', (e: L.LeafletMouseEvent) => {
+            if (e.originalEvent) {
+              L.DomEvent.stopPropagation(e.originalEvent);
+            }
             if (onAreaSelect) onAreaSelect(areaData);
           });
 
           savedAreaPolygonsRef.current.set(areaData.id, polygon);
-        } catch (err) {
-          console.error('Error adding area polygon:', err);
         }
+      } catch (err) {
+        console.error('Error adding area polygon:', err);
       }
     });
   }, [areas, onAreaSelect]);
@@ -244,14 +270,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       const existing = savedRoutePolylinesRef.current.get(routeData.id);
 
-      if (existing) {
-        existing.setLatLngs(validPoints as L.LatLngExpression[]);
-        existing.setStyle({
-          color: routeData.color || '#10b981',
-          dashArray: routeData.isDashed ? '8, 8' : undefined,
-        });
-      } else {
-        try {
+      try {
+        if (existing) {
+          existing.setLatLngs(validPoints as L.LatLngExpression[]);
+          existing.setStyle({
+            color: routeData.color || '#10b981',
+            dashArray: routeData.isDashed ? '8, 8' : undefined,
+          });
+          // Re-bind click cleanly
+          existing.off('click');
+          existing.on('click', (e: L.LeafletMouseEvent) => {
+            if (e.originalEvent) {
+              L.DomEvent.stopPropagation(e.originalEvent);
+            }
+            if (onRouteSelect) onRouteSelect(routeData);
+          });
+        } else {
           const polyline = L.polyline(validPoints as L.LatLngExpression[], {
             color: routeData.color || '#10b981',
             weight: 4,
@@ -266,15 +300,17 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' }
           );
 
-          polyline.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
+          polyline.on('click', (e: L.LeafletMouseEvent) => {
+            if (e.originalEvent) {
+              L.DomEvent.stopPropagation(e.originalEvent);
+            }
             if (onRouteSelect) onRouteSelect(routeData);
           });
 
           savedRoutePolylinesRef.current.set(routeData.id, polyline);
-        } catch (err) {
-          console.error('Error adding route polyline:', err);
         }
+      } catch (err) {
+        console.error('Error adding route polyline:', err);
       }
     });
   }, [routes, onRouteSelect]);
@@ -355,25 +391,29 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         effectiveSize
       );
 
-      if (existing) {
-        existing.setLatLng([markerData.lat, markerData.lng]);
-        existing.setIcon(icon);
-      } else {
-        const leafletMarker = L.marker([markerData.lat, markerData.lng], {
-          icon,
-          draggable: true,
-        }).addTo(map);
+      try {
+        if (existing) {
+          existing.setLatLng([markerData.lat, markerData.lng]);
+          existing.setIcon(icon);
+        } else {
+          const leafletMarker = L.marker([markerData.lat, markerData.lng], {
+            icon,
+            draggable: true,
+          }).addTo(map);
 
-        leafletMarker.on('click', () => {
-          onMarkerSelect(markerData);
-        });
+          leafletMarker.on('click', () => {
+            onMarkerSelect(markerData);
+          });
 
-        leafletMarker.on('dragend', (e) => {
-          const latLng = e.target.getLatLng();
-          onMarkerDragEnd(markerData.id, latLng.lat, latLng.lng);
-        });
+          leafletMarker.on('dragend', (e) => {
+            const latLng = e.target.getLatLng();
+            onMarkerDragEnd(markerData.id, latLng.lat, latLng.lng);
+          });
 
-        leafletMarkersRef.current.set(markerData.id, leafletMarker);
+          leafletMarkersRef.current.set(markerData.id, leafletMarker);
+        }
+      } catch (err) {
+        console.error('Error rendering marker:', err);
       }
     });
   }, [markers, effectiveSize, onMarkerSelect, onMarkerDragEnd]);
@@ -402,12 +442,31 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     onAddMarker(resourceTypeId, latLng.lat, latLng.lng);
   };
 
+  const handleRecenter = () => {
+    if (mapRef.current) {
+      mapRef.current.flyTo(CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, { duration: 1 });
+      mapRef.current.invalidateSize();
+    }
+  };
+
   return (
-    <div
-      ref={containerRef}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className={`w-full h-full relative bg-slate-900 ${drawMode !== 'none' ? 'cursor-crosshair' : ''}`}
-    />
+    <div className="w-full h-full relative bg-slate-900">
+      <div
+        ref={containerRef}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={`w-full h-full relative bg-slate-900 ${drawMode !== 'none' ? 'cursor-crosshair' : ''}`}
+      />
+
+      {/* Quick Recenter Button */}
+      <button
+        onClick={handleRecenter}
+        className="absolute bottom-6 right-4 z-[400] bg-slate-900/90 hover:bg-slate-800 text-white p-2.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-1.5 text-xs font-semibold backdrop-blur-sm transition-all"
+        title="Recenter map to Camarines Norte"
+      >
+        <Locate className="w-4 h-4 text-emerald-400" />
+        <span className="hidden sm:inline">Recenter Map</span>
+      </button>
+    </div>
   );
 };

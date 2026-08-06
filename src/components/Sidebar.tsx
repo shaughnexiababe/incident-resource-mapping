@@ -6,7 +6,6 @@ import {
   Info,
   GripVertical,
   Navigation,
-  Layers,
   Trash2,
   Edit2
 } from 'lucide-react';
@@ -231,7 +230,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={a.id}
                     className="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700 text-xs hover:border-slate-500 transition-colors"
                   >
-                    <div className="flex items-center space-x-2 min-w-0">
+                    <div 
+                      onClick={() => onSelectArea && onSelectArea(a)}
+                      className="flex items-center space-x-2 min-w-0 cursor-pointer flex-1"
+                    >
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
                       <span className="font-semibold text-slate-200 truncate">{a.name}</span>
                     </div>
@@ -277,7 +279,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={r.id}
                     className="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700 text-xs hover:border-slate-500 transition-colors"
                   >
-                    <div className="flex items-center space-x-2 min-w-0">
+                    <div 
+                      onClick={() => onSelectRoute && onSelectRoute(r)}
+                      className="flex items-center space-x-2 min-w-0 cursor-pointer flex-1"
+                    >
                       <Navigation className="w-3.5 h-3.5 shrink-0" style={{ color: r.color }} />
                       <div className="min-w-0">
                         <span className="font-semibold text-slate-200 truncate block">{r.name}</span>
