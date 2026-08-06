@@ -1,35 +1,14 @@
 import React, { useState } from 'react';
 import { RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
 import { ResourceCategory, ResourceDefinition } from '@/types/disaster';
+import { ENHANCED_ICON_SVGS } from '@/utils/leafletIcons';
 import { 
-  Ambulance, 
-  Flame, 
-  Truck, 
-  ShieldAlert, 
-  Cross, 
-  UserCheck, 
-  Users, 
-  UserCog, 
-  MapPin, 
   Info,
   GripVertical,
   Navigation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-
-// Mapping Lucide icons dynamically
-const LucideIconMap: Record<string, React.ElementType> = {
-  Ambulance,
-  Flame,
-  Truck,
-  ShieldAlert,
-  Cross,
-  UserCheck,
-  Users,
-  UserCog,
-  MapPin,
-};
 
 interface SidebarProps {
   onMunicipalitySelect: (lat: number, lng: number) => void;
@@ -51,7 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
     // Authentic ICS Symbols rendering
     if (item.id === 'icp') {
       return (
-        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-md">
           <div className="w-full h-1/2 bg-blue-600"></div>
           <div className="w-full h-1/2 bg-white"></div>
           <span className="absolute text-[10px] font-black text-slate-900 tracking-tight">ICP</span>
@@ -60,33 +39,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
     }
     if (item.id === 'staging_area') {
       return (
-        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-md">
           S
         </div>
       );
     }
     if (item.id === 'camp') {
       return (
-        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-md">
           C
         </div>
       );
     }
     if (item.id === 'base') {
       return (
-        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-base shrink-0 shadow-md">
           B
         </div>
       );
     }
 
-    const IconComponent = LucideIconMap[item.iconName] || MapPin;
+    // Enhanced SVG Miniature figure badge
+    const enhancedSvg = ENHANCED_ICON_SVGS[item.id];
+
     return (
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm"
-        style={{ backgroundColor: item.color }}
+        className="w-10 h-10 rounded-full flex items-center justify-center border border-white/40 shrink-0 shadow-md"
+        style={{
+          background: `radial-gradient(circle at 30% 30%, ${item.color}, #0f172a)`,
+        }}
       >
-        <IconComponent className="w-5 h-5" />
+        {enhancedSvg ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24">
+            <g fill="none">{enhancedSvg}</g>
+          </svg>
+        ) : (
+          <span className="text-white font-bold text-xs">{item.name.substring(0, 2)}</span>
+        )}
       </div>
     );
   };
