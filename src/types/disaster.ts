@@ -62,6 +62,29 @@ export interface PrepositionedMarker {
   updatedAt: string;
 }
 
+export interface OperationalArea {
+  id: string;
+  name: string;
+  color: string;
+  opacity: number;
+  points: [number, number][];
+  notes?: string;
+  updatedAt: string;
+}
+
+export type RouteType = 'evacuation' | 'rerouting' | 'emergency' | 'supply';
+
+export interface TacticalRoute {
+  id: string;
+  name: string;
+  type: RouteType;
+  color: string;
+  isDashed: boolean;
+  points: [number, number][];
+  notes?: string;
+  updatedAt: string;
+}
+
 export interface HazardZone {
   id: string;
   name: string;
@@ -78,4 +101,6 @@ export interface PrepositionPlan {
   createdAt: string;
   updatedAt: string;
   markers: PrepositionedMarker[];
+  areas?: OperationalArea[];
+  routes?: TacticalRoute[];
 }

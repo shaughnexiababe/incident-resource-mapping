@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle, ZoomIn } from 'lucide-react';
+import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -12,6 +12,8 @@ interface NavbarProps {
   totalPersonnel: number;
   totalVehicles: number;
   totalFacilities: number;
+  totalAreas: number;
+  totalRoutes: number;
   onSavePlan: () => void;
   onResetPlan: () => void;
   onExportJSON: () => void;
@@ -20,6 +22,9 @@ interface NavbarProps {
   onToggleSummary: () => void;
   iconSize: number;
   setIconSize: (size: number) => void;
+  drawMode: 'none' | 'area' | 'route';
+  onStartDrawArea: () => void;
+  onStartDrawRoute: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,6 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalPersonnel,
   totalVehicles,
   totalFacilities,
+  totalAreas,
+  totalRoutes,
   onSavePlan,
   onResetPlan,
   onExportJSON,
@@ -37,6 +44,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleSummary,
   iconSize,
   setIconSize,
+  drawMode,
+  onStartDrawArea,
+  onStartDrawRoute,
 }) => {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-md z-20">
@@ -73,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Click to view full resource breakdown"
         >
           <MapPin className="w-3.5 h-3.5 text-red-400" />
-          <span className="text-slate-300">Total Placed:</span>
+          <span className="text-slate-300">Placed:</span>
           <span className="font-bold text-white">{totalMarkers}</span>
         </button>
 
@@ -91,13 +101,51 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="flex items-center space-x-1 text-xs px-2 py-1 text-slate-300">
           <Layers className="w-3.5 h-3.5 text-purple-400" />
-          <span>Facilities:</span>
-          <span className="font-bold text-purple-300">{totalFacilities}</span>
+          <span>Divisions:</span>
+          <span className="font-bold text-purple-300">{totalAreas}</span>
+        </div>
+
+        <div className="flex items-center space-x-1 text-xs px-2 py-1 text-slate-300">
+          <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Routes:</span>
+          <span className="font-bold text-emerald-300">{totalRoutes}</span>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="flex items-center space-x-2">
+        {/* Draw Area Division Button */}
+        <Button
+          variant={drawMode === 'area' ? 'default' : 'outline'}
+          size="sm"
+          onClick={onStartDrawArea}
+          className={`h-8 text-xs font-semibold gap-1.5 ${
+            drawMode === 'area'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : 'border-slate-700 text-slate-300 bg-slate-800 hover:text-white'
+          }`}
+          title="Highlight operational area division sector"
+        >
+          <Spline className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden xl:inline">+ Area Division</span>
+        </Button>
+
+        {/* Draw Route Button */}
+        <Button
+          variant={drawMode === 'route' ? 'default' : 'outline'}
+          size="sm"
+          onClick={onStartDrawRoute}
+          className={`h-8 text-xs font-semibold gap-1.5 ${
+            drawMode === 'route'
+              ? 'bg-emerald-600 text-white border-emerald-500'
+              : 'border-slate-700 text-slate-300 bg-slate-800 hover:text-white'
+          }`}
+          title="Draw evacuation or traffic rerouting lines"
+        >
+          <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden xl:inline">+ Traffic Route</span>
+        </Button>
+
         {/* Icon Size Selector */}
         <div className="flex items-center space-x-1.5 bg-slate-800/90 px-2 py-1 rounded border border-slate-700 text-xs">
           <ZoomIn className="w-3.5 h-3.5 text-slate-400" />
@@ -127,7 +175,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Toggle Hazard Overlay Polygons"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">{showHazards ? 'Hide Hazard Overlay' : 'Show Hazard Overlay'}</span>
+          <span className="hidden md:inline">{showHazards ? 'Hide Hazards' : 'Show Hazards'}</span>
         </Button>
 
         <Button

@@ -1,20 +1,37 @@
 import React, { useState } from 'react';
 import { RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
-import { ResourceCategory, ResourceDefinition } from '@/types/disaster';
+import { ResourceCategory, ResourceDefinition, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { ENHANCED_ICON_SVGS } from '@/utils/leafletIcons';
 import { 
   Info,
   GripVertical,
-  Navigation
+  Navigation,
+  Layers,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface SidebarProps {
   onMunicipalitySelect: (lat: number, lng: number) => void;
+  areas?: OperationalArea[];
+  routes?: TacticalRoute[];
+  onSelectArea?: (area: OperationalArea) => void;
+  onSelectRoute?: (route: TacticalRoute) => void;
+  onDeleteArea?: (id: string) => void;
+  onDeleteRoute?: (id: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  onMunicipalitySelect,
+  areas = [],
+  routes = [],
+  onSelectArea,
+  onSelectRoute,
+  onDeleteArea,
+  onDeleteRoute,
+}) => {
   const [activeTab, setActiveTab] = useState<string>('vehicles');
 
   const getResources = (category: ResourceCategory) => {
@@ -27,7 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
   };
 
   const renderIconBadge = (item: ResourceDefinition) => {
-    // Authentic ICS Symbols rendering
     if (item.id === 'icp') {
       return (
         <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-md">
@@ -91,7 +107,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
       );
     }
 
-    // SVG icon without background circle
     const enhancedSvg = ENHANCED_ICON_SVGS[item.id] || '';
 
     return (
@@ -146,29 +161,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
       <div className="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-300 flex items-start space-x-2">
         <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
         <span>
-          <strong>Drag any icon</strong> directly onto the map to preposition assets and command facilities.
+          <strong>Drag assets</strong> onto the map, or use top controls to draw <strong>Area Divisions</strong> and <strong>Rerouting Lines</strong>.
         </span>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className="p-2 bg-slate-900 border-b border-slate-800">
-          <TabsList className="w-full bg-slate-800/90 p-1 text-slate-400 grid grid-cols-4 h-9">
-            <TabsTrigger value="vehicles" className="text-[11px] py-1 data-[state=active]:bg-red-600 data-[state=active]:text-white font-semibold">
+          <TabsList className="w-full bg-slate-800/90 p-1 text-slate-400 grid grid-cols-5 h-9">
+            <TabsTrigger value="vehicles" className="text-[10px] py-1 data-[state=active]:bg-red-600 data-[state=active]:text-white font-semibold">
               Vehicles
             </TabsTrigger>
-            <TabsTrigger value="personnel" className="text-[11px] py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-semibold">
+            <TabsTrigger value="personnel" className="text-[10px] py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-semibold">
               Personnel
             </TabsTrigger>
-            <TabsTrigger value="facilities" className="text-[11px] py-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white font-semibold">
-              ICS Standard
+            <TabsTrigger value="facilities" className="text-[10px] py-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white font-semibold">
+              ICS
             </TabsTrigger>
-            <TabsTrigger value="locations" className="text-[11px] py-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-semibold">
+            <TabsTrigger value="layers" className="text-[10px] py-1 data-[state=active]:bg-cyan-600 data-[state=active]:text-white font-semibold">
+              Layers ({areas.length + routes.length})
+            </TabsTrigger>
+            <TabsTrigger value="locations" className="text-[10px] py-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-semibold">
               Towns
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* Tab Content 1: Vehicles & Craft */}
+        {/* Tab 1: Vehicles & Craft */}
         <TabsContent value="vehicles" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Vehicles, Air & Water Craft
@@ -176,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
           {getResources('vehicle').map(renderDraggableCard)}
         </TabsContent>
 
-        {/* Tab Content 2: Personnel */}
+        {/* Tab 2: Personnel */}
         <TabsContent value="personnel" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Response Personnel & Teams
@@ -184,16 +202,114 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
           {getResources('personnel').map(renderDraggableCard)}
         </TabsContent>
 
-        {/* Tab Content 3: ICS Facilities */}
+        {/* Tab 3: ICS Facilities */}
         <TabsContent value="facilities" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span>Incident Command System (ICS)</span>
+            <span>Incident Command System</span>
             <span className="text-[9px] bg-blue-900/60 text-blue-300 px-1.5 py-0.5 rounded border border-blue-700">FEMA Standard</span>
           </div>
           {getResources('facility').map(renderDraggableCard)}
         </TabsContent>
 
-        {/* Tab Content 4: Quick Town Locator */}
+        {/* Tab 4: Tactical Layers (Areas & Routes) */}
+        <TabsContent value="layers" className="flex-1 overflow-y-auto p-3 space-y-3 mt-0">
+          {/* Operational Area Divisions */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Operational Area Divisions</span>
+              <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-300">{areas.length}</Badge>
+            </div>
+
+            {areas.length === 0 ? (
+              <p className="text-[11px] text-slate-500 italic p-2 bg-slate-800/40 rounded border border-slate-800">
+                No area divisions defined. Click "+ Area Division" in the header to draw on map.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {areas.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700 text-xs hover:border-slate-500 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                      <span className="font-semibold text-slate-200 truncate">{a.name}</span>
+                    </div>
+                    <div className="flex items-center space-x-1 shrink-0">
+                      <button
+                        onClick={() => onSelectArea && onSelectArea(a)}
+                        className="p-1 hover:bg-slate-700 rounded text-slate-300 hover:text-white"
+                        title="Edit Area"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {onDeleteArea && (
+                        <button
+                          onClick={() => onDeleteArea(a.id)}
+                          className="p-1 hover:bg-red-900/40 rounded text-slate-400 hover:text-red-300"
+                          title="Delete Area"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tactical Routes */}
+          <div className="space-y-1.5 pt-2 border-t border-slate-800">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Traffic & Tactical Routes</span>
+              <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-300">{routes.length}</Badge>
+            </div>
+
+            {routes.length === 0 ? (
+              <p className="text-[11px] text-slate-500 italic p-2 bg-slate-800/40 rounded border border-slate-800">
+                No routes drawn. Click "+ Traffic Route" in the header to draw on map.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {routes.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700 text-xs hover:border-slate-500 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <Navigation className="w-3.5 h-3.5 shrink-0" style={{ color: r.color }} />
+                      <div className="min-w-0">
+                        <span className="font-semibold text-slate-200 truncate block">{r.name}</span>
+                        <span className="text-[10px] text-slate-400 capitalize block">{r.type} Corridor</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1 shrink-0">
+                      <button
+                        onClick={() => onSelectRoute && onSelectRoute(r)}
+                        className="p-1 hover:bg-slate-700 rounded text-slate-300 hover:text-white"
+                        title="Edit Route"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {onDeleteRoute && (
+                        <button
+                          onClick={() => onDeleteRoute(r.id)}
+                          className="p-1 hover:bg-red-900/40 rounded text-slate-400 hover:text-red-300"
+                          title="Delete Route"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Tab 5: Town Locator */}
         <TabsContent value="locations" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
             <span>Map Municipalities</span>
@@ -226,8 +342,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
           <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">S</span> Staging Area</div>
           <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">C</span> Camp</div>
           <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">B</span> Base</div>
-          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">H</span> Helibase</div>
-          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-white text-black font-extrabold text-[8px] flex items-center justify-center border border-slate-900">H1</span> Helispot</div>
         </div>
       </div>
     </aside>
