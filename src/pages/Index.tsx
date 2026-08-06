@@ -5,29 +5,29 @@ import { MapContainer } from '@/components/MapContainer';
 import { MarkerEditModal } from '@/components/MarkerEditModal';
 import { PlanSummaryDrawer } from '@/components/PlanSummaryDrawer';
 import { PrepositionedMarker, ResourceTypeId, PrepositionPlan } from '@/types/disaster';
-import { INITIAL_MARKERS, RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
+import { RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
 import { showSuccess, showError } from '@/utils/toast';
 
-const STORAGE_KEY = 'incident_resource_preposition_plan_v2';
+const STORAGE_KEY = 'incident_resource_preposition_plan_v3';
 
 const Index = () => {
-  const [planTitle, setPlanTitle] = useState<string>('Multi-Hazard Operational Response Plan');
+  const [planTitle, setPlanTitle] = useState<string>('Incident Operational Response Plan');
   const [markers, setMarkers] = useState<PrepositionedMarker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<PrepositionedMarker | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false);
-  const [showHazards, setShowHazards] = useState<boolean>(true);
+  const [showHazards, setShowHazards] = useState<boolean>(false); // Default to OFF for a clean map
   const [selectedMunicipalityCoord, setSelectedMunicipalityCoord] = useState<[number, number] | null>(null);
   const [iconSize, setIconSize] = useState<number>(40);
 
-  // Load initial plan from localStorage or defaults
+  // Load plan from localStorage if user previously saved one, otherwise start empty/blank
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
         const parsed: PrepositionPlan = JSON.parse(savedData);
         if (parsed.title) setPlanTitle(parsed.title);
-        if (parsed.markers) {
+        if (parsed.markers && parsed.markers.length > 0) {
           setMarkers(parsed.markers);
           return;
         }
@@ -35,7 +35,8 @@ const Index = () => {
     } catch (e) {
       console.error('Failed to parse saved plan:', e);
     }
-    setMarkers(INITIAL_MARKERS);
+    // Default to completely blank map with zero markers
+    setMarkers([]);
   }, []);
 
   // Calculate deployment stats
