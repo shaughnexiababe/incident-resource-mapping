@@ -59,18 +59,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
       );
     }
 
-    // Enhanced SVG Miniature figure badge
+    // Pure icon without circle background
     const enhancedSvg = ENHANCED_ICON_SVGS[item.id];
 
     return (
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center border border-white/40 shrink-0 shadow-md"
-        style={{
-          background: `radial-gradient(circle at 30% 30%, ${item.color}, #0f172a)`,
-        }}
-      >
+      <div className="w-10 h-10 flex items-center justify-center shrink-0 filter drop-shadow-md">
         {enhancedSvg ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
             <g fill="none">{enhancedSvg}</g>
           </svg>
         ) : (

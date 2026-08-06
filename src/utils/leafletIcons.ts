@@ -178,19 +178,13 @@ export function createMarkerIcon(resourceTypeId: ResourceTypeId, title: string, 
       </div>
     `;
   } else {
-    // Enhanced miniature figure icon for vehicles & personnel
+    // Pure icon without circle background
     const enhancedSvg = ENHANCED_ICON_SVGS[resourceTypeId];
 
     markerContentHtml = `
-      <div 
-        class="w-11 h-11 rounded-full flex items-center justify-center border-2 border-white/90 text-white relative group-hover:scale-110 transition-all duration-200"
-        style="
-          background: radial-gradient(circle at 30% 30%, ${color}, #090d16);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.4);
-        "
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" class="drop-shadow-md">
-          ${enhancedSvg}
+      <div class="w-10 h-10 flex items-center justify-center relative filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.85)] hover:scale-115 transition-transform duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+          <g fill="none">${enhancedSvg}</g>
         </svg>
       </div>
     `;
@@ -221,7 +215,7 @@ export function createMarkerIcon(resourceTypeId: ResourceTypeId, title: string, 
   return L.divIcon({
     html,
     className: 'custom-leaflet-marker',
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
   });
 }
