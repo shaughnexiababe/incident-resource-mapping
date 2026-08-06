@@ -1,6 +1,5 @@
 import { ResourceDefinition, HazardZone } from '@/types/disaster';
 
-// Camarines Norte Center (Daet / Central region)
 export const CAMARINES_NORTE_CENTER: [number, number] = [14.1122, 122.9553];
 export const DEFAULT_ZOOM = 11;
 
@@ -20,23 +19,23 @@ export const MUNICIPALITIES = [
 ];
 
 export const RESOURCE_CATALOG: ResourceDefinition[] = [
-  // Vehicles
+  // Vehicles, Machinery & Craft
   {
     id: 'ambulance',
     name: 'Ambulance Unit',
     category: 'vehicle',
     iconName: 'Ambulance',
-    color: '#ef4444', // Red
+    color: '#ef4444',
     badgeBg: 'bg-red-100 text-red-800 border-red-300',
     description: 'Emergency Medical Service Response Unit',
     defaultCallsign: 'MEDEVAC-1'
   },
   {
     id: 'fire_truck',
-    name: 'Fire Truck',
+    name: 'Fire Truck / Pumper',
     category: 'vehicle',
     iconName: 'Flame',
-    color: '#f97316', // Orange
+    color: '#f97316',
     badgeBg: 'bg-orange-100 text-orange-800 border-orange-300',
     description: 'BFP / Local Suppression & Rescue Pumper',
     defaultCallsign: 'ENGINE-1'
@@ -46,7 +45,7 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Rescue Truck',
     category: 'vehicle',
     iconName: 'Truck',
-    color: '#06b6d4', // Cyan
+    color: '#06b6d4',
     badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
     description: 'Heavy Rescue & Extrication Vehicle',
     defaultCallsign: 'RESCUE-ALPHA'
@@ -56,21 +55,93 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Police Mobile',
     category: 'vehicle',
     iconName: 'ShieldAlert',
-    color: '#2563eb', // Blue
+    color: '#2563eb',
     badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
     description: 'PNP Security & Patrol Vehicle',
     defaultCallsign: 'PATROL-1'
   },
+  {
+    id: 'helicopter',
+    name: 'Rescue Helicopter',
+    category: 'vehicle',
+    iconName: 'Helicopter',
+    color: '#2563eb',
+    badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
+    description: 'Air SAR & Medevac Chopper',
+    defaultCallsign: 'AIR-SAR-1',
+    agency: 'PAF / PCG'
+  },
+  {
+    id: 'aircraft',
+    name: 'Cargo / Recon Aircraft',
+    category: 'vehicle',
+    iconName: 'Plane',
+    color: '#0284c7',
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+    description: 'Aerial Survey & Supply Transport Plane',
+    defaultCallsign: 'AIR-LOG-1'
+  },
+  {
+    id: 'rubber_boat',
+    name: 'Inflatable Rubber Boat (IRB)',
+    category: 'vehicle',
+    iconName: 'Ship',
+    color: '#16a34a',
+    badgeBg: 'bg-green-100 text-green-800 border-green-300',
+    description: 'Flood Water Rescue Rubber Boat',
+    defaultCallsign: 'WATER-RESCUE-1'
+  },
+  {
+    id: 'patrol_vessel',
+    name: 'Coast Guard Patrol Craft',
+    category: 'vehicle',
+    iconName: 'Anchor',
+    color: '#1e3a8a',
+    badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    description: 'Maritime SAR & Coastal Vessel',
+    defaultCallsign: 'PCG-VESSEL-1',
+    agency: 'PCG'
+  },
+  {
+    id: 'heavy_equipment',
+    name: 'Excavator / Backhoe',
+    category: 'vehicle',
+    iconName: 'HardHat',
+    color: '#d97706',
+    badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+    description: 'Debris Clearing & Engineering Machinery',
+    defaultCallsign: 'ENGINEER-EQ-1'
+  },
+  {
+    id: 'water_tanker',
+    name: 'Water Tanker Lorry',
+    category: 'vehicle',
+    iconName: 'Droplets',
+    color: '#0284c7',
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+    description: 'Potable Water Distribution Tanker',
+    defaultCallsign: 'WATER-TANK-1'
+  },
+  {
+    id: 'comms_truck',
+    name: 'Mobile Comms Van',
+    category: 'vehicle',
+    iconName: 'Radio',
+    color: '#7e22ce',
+    badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+    description: 'Emergency Radio & Satellite Command Vehicle',
+    defaultCallsign: 'COMMS-MOBILE-1'
+  },
 
-  // Personnel
+  // Personnel & Specialized Teams
   {
     id: 'medics',
-    name: 'Medical Team',
+    name: 'Medical / Triage Team',
     category: 'personnel',
     iconName: 'Cross',
-    color: '#ec4899', // Pink
+    color: '#ec4899',
     badgeBg: 'bg-pink-100 text-pink-800 border-pink-300',
-    description: 'Doctors, Nurses & First Responders Squad',
+    description: 'Doctors, Nurses & EMS Responders',
     defaultCallsign: 'TRIAGE-TEAM'
   },
   {
@@ -78,36 +149,88 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'PNP Personnel',
     category: 'personnel',
     iconName: 'UserCheck',
-    color: '#1d4ed8', // Dark Blue
+    color: '#1d4ed8',
     badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-    description: 'Philippine National Police Force Unit',
+    description: 'Philippine National Police Contingent',
     defaultCallsign: 'PNP-SQUAD-1',
     agency: 'PNP'
   },
   {
     id: 'bfp_personnel',
-    name: 'BFP Personnel',
+    name: 'BFP Search & Rescue',
     category: 'personnel',
     iconName: 'Users',
-    color: '#ea580c', // Dark Orange
+    color: '#ea580c',
     badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
-    description: 'Bureau of Fire Protection Search & Rescue',
+    description: 'Bureau of Fire Protection Rescue Squad',
     defaultCallsign: 'BFP-CREW-1',
     agency: 'BFP'
   },
   {
     id: 'afp_personnel',
-    name: 'AFP Personnel',
+    name: 'AFP HADR Contingent',
     category: 'personnel',
     iconName: 'UserCog',
-    color: '#15803d', // Dark Green
+    color: '#15803d',
     badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    description: 'Armed Forces HADR Response Platoon',
+    description: 'Armed Forces Disaster Response Platoon',
     defaultCallsign: 'AFP-DRU-1',
     agency: 'AFP'
   },
+  {
+    id: 'pcg_personnel',
+    name: 'Coast Guard SAR Team',
+    category: 'personnel',
+    iconName: 'Shield',
+    color: '#1d4ed8',
+    badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
+    description: 'Philippine Coast Guard Water Rescuers',
+    defaultCallsign: 'PCG-SAR-1',
+    agency: 'PCG'
+  },
+  {
+    id: 'paf_personnel',
+    name: 'Air Force HADR Team',
+    category: 'personnel',
+    iconName: 'Zap',
+    color: '#0284c7',
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+    description: 'Air Force Rescue & Reconnaissance Crew',
+    defaultCallsign: 'PAF-SQUAD-1',
+    agency: 'PAF'
+  },
+  {
+    id: 'comms_group',
+    name: 'Emergency Radio Comms',
+    category: 'personnel',
+    iconName: 'Radio',
+    color: '#7e22ce',
+    badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+    description: 'Ham Radio & Emergency Comms Operators',
+    defaultCallsign: 'RADIO-NET-1'
+  },
+  {
+    id: 'k9_team',
+    name: 'K9 Search & Rescue',
+    category: 'personnel',
+    iconName: 'Dog',
+    color: '#b45309',
+    badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+    description: 'Search Dog Canine Unit for Collapsed Structure SAR',
+    defaultCallsign: 'K9-UNIT-1'
+  },
+  {
+    id: 'volunteer_group',
+    name: 'Volunteer / NGO Rescuers',
+    category: 'personnel',
+    iconName: 'HeartHandshake',
+    color: '#0d9488',
+    badgeBg: 'bg-teal-100 text-teal-800 border-teal-300',
+    description: 'Civil Defense Volunteers & Red Cross Responders',
+    defaultCallsign: 'VOLUNTEER-SQUAD'
+  },
 
-  // ICS Standard Facilities (FEMA / NIMS Cartographic Guidelines)
+  // ICS Standard Facilities
   {
     id: 'icp',
     name: 'Incident Command Post (ICP)',
@@ -116,7 +239,7 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     color: '#2563eb',
     badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
     description: 'FEMA ICS Standard: Split Circle with ICP designation',
-    defaultCallsign: 'CAM-NORTE-ICP'
+    defaultCallsign: 'INCIDENT-ICP'
   },
   {
     id: 'staging_area',
@@ -186,7 +309,7 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     color: '#0f172a',
     badgeBg: 'bg-slate-200 text-slate-800 border-slate-400',
     description: 'Multi-agency regional coordination center',
-    defaultCallsign: 'PDRRMO-EOC'
+    defaultCallsign: 'EOC-MAIN'
   }
 ];
 
@@ -210,7 +333,7 @@ export const HAZARD_ZONES: HazardZone[] = [
     name: 'Mercedes Coastal Storm Surge Zone',
     type: 'storm_surge',
     severity: 'high',
-    description: 'Coastal exposure to Category 3+ typhoon storm surges',
+    description: 'Coastal exposure to Category 3+ storm surges',
     coordinates: [
       [14.120, 123.000],
       [14.160, 123.030],
@@ -223,7 +346,7 @@ export const HAZARD_ZONES: HazardZone[] = [
     name: 'Labo Mountainous Landslide Area',
     type: 'landslide',
     severity: 'medium',
-    description: 'Steep terrain prone to debris flows during rainfall',
+    description: 'Steep terrain prone to debris flows during heavy rainfall',
     coordinates: [
       [14.180, 122.780],
       [14.210, 122.820],
@@ -233,13 +356,12 @@ export const HAZARD_ZONES: HazardZone[] = [
   }
 ];
 
-// Initial default deployment markers for quick demonstration
 export const INITIAL_MARKERS = [
   {
     id: 'init-1',
     resourceTypeId: 'icp' as const,
-    title: 'PDRRMO Central Command',
-    notes: 'Primary Incident Command Post setup at Provincial Capitol Grounds',
+    title: 'Central Command Post',
+    notes: 'Incident Command Post setup at Provincial Capitol Grounds',
     lat: 14.1150,
     lng: 122.9560,
     status: 'ready' as const,
@@ -252,7 +374,7 @@ export const INITIAL_MARKERS = [
   {
     id: 'init-2',
     resourceTypeId: 'staging_area' as const,
-    title: 'Labo North Staging Area',
+    title: 'North Staging Area',
     notes: 'Heavy equipment and rescue teams ready for dispatch',
     lat: 14.1550,
     lng: 122.8350,
@@ -279,30 +401,16 @@ export const INITIAL_MARKERS = [
   },
   {
     id: 'init-4',
-    resourceTypeId: 'rescue_truck' as const,
-    title: 'Mercedes Flood Rescue Alpha',
+    resourceTypeId: 'rubber_boat' as const,
+    title: 'Flood Rescue IRB Alpha',
     notes: 'Equipped with 2 inflatable rubber boats (IRB) and life vests',
     lat: 14.1050,
     lng: 123.0150,
     status: 'deployed' as const,
-    quantity: 1,
+    quantity: 2,
     contactPerson: 'Sgt. J. Reyes',
     contactNumber: '+63 999 222 3344',
     municipality: 'Mercedes',
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'init-5',
-    resourceTypeId: 'pnp_personnel' as const,
-    title: 'PNP Security Platoon',
-    notes: 'Maintaining order & traffic flow along Maharlika Highway',
-    lat: 14.1450,
-    lng: 122.9300,
-    status: 'ready' as const,
-    quantity: 15,
-    contactPerson: 'Maj. E. Ramos',
-    contactNumber: '+63 915 888 7766',
-    municipality: 'Talisay',
     updatedAt: new Date().toISOString()
   }
 ];

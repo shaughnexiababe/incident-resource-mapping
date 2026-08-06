@@ -2,9 +2,9 @@ import L from 'leaflet';
 import { RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { ResourceTypeId } from '@/types/disaster';
 
-// Detailed SVG miniature figures for vehicles and personnel
+// Detailed SVG miniature figures for vehicles, aircraft, boats and personnel
 export const ENHANCED_ICON_SVGS: Record<string, string> = {
-  // Ambulance - Medical vehicle silhouette with lightbar and cross
+  // Ambulance
   ambulance: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <rect x="7" y="2" width="4" height="2" fill="#ef4444" rx="0.5"/>
@@ -19,7 +19,7 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // Police Car - Patrol cruiser with lightbar, police star badge & siren
+  // Police Car
   police_car: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M8 2 L12 2 L12 4 L8 4 Z" fill="#ef4444"/>
@@ -34,7 +34,7 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // Fire Truck - Heavy pumper truck with ladder and siren
+  // Fire Truck
   fire_truck: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <rect x="4" y="2" width="16" height="3" fill="#cbd5e1" stroke="#475569" stroke-width="0.5"/>
@@ -52,7 +52,7 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // Rescue Truck - Heavy extrication truck with crane/winch boom
+  // Rescue Truck
   rescue_truck: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M3 9 L12 3 L14 5 L6 10 Z" fill="#f59e0b"/>
@@ -67,7 +67,120 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // Medical Team - Triage cross & ECG pulse line
+  // Air Asset: Helicopter
+  helicopter: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Main Rotor Blade -->
+      <line x1="2" y1="4" x2="22" y2="4" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+      <line x1="12" y1="4" x2="12" y2="7" stroke="#3b82f6" stroke-width="1.5"/>
+      <!-- Fuselage -->
+      <ellipse cx="10" cy="12" rx="7" ry="5" fill="#2563eb" stroke="#bfdbfe" stroke-width="0.8"/>
+      <path d="M8 9 C11 9 13 10 13 12 C13 14 11 15 8 15 Z" fill="#93c5fd"/>
+      <!-- Tail Boom -->
+      <path d="M15 11 L22 10 L22 12 L15 13 Z" fill="#1d4ed8"/>
+      <line x1="21" y1="7" x2="21" y2="15" stroke="#f43f5e" stroke-width="1.5"/>
+      <!-- Landing Skids -->
+      <line x1="5" y1="18" x2="15" y2="18" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="7" y1="17" x2="7" y2="18" stroke="#cbd5e1" stroke-width="1"/>
+      <line x1="13" y1="17" x2="13" y2="18" stroke="#cbd5e1" stroke-width="1"/>
+    </g>
+  `,
+
+  // Air Asset: Aircraft
+  aircraft: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Fuselage -->
+      <path d="M12 2 C10 6, 10 16, 10 20 L14 20 C14 16, 14 6, 12 2 Z" fill="#0284c7" stroke="#bae6fd" stroke-width="0.8"/>
+      <!-- Main Wings -->
+      <polygon points="12,8 2,14 4,16 12,12 20,16 22,14" fill="#0369a1"/>
+      <!-- Tail Wings -->
+      <polygon points="12,17 7,21 8,22 12,19 16,22 17,21" fill="#075985"/>
+      <!-- Cockpit Window -->
+      <ellipse cx="12" cy="6" rx="1.5" ry="2" fill="#7dd3fc"/>
+    </g>
+  `,
+
+  // Water Asset: Rubber Boat / IRB
+  rubber_boat: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Inflatable Tubes -->
+      <path d="M3 10 C3 6 8 5 12 5 C16 5 21 6 21 10 C21 15 18 18 12 18 C6 18 3 15 3 10 Z" fill="#15803d" stroke="#86efac" stroke-width="1"/>
+      <path d="M6 10 C6 8 9 7 12 7 C15 7 18 8 18 10 C18 13 15 15 12 15 C9 15 6 13 6 10 Z" fill="#166534"/>
+      <!-- Outboard Motor -->
+      <rect x="11" y="17" width="2" height="5" fill="#1e293b"/>
+      <polygon points="10,21 14,21 12,23" fill="#f59e0b"/>
+      <!-- Rescuers / Paddles -->
+      <circle cx="9" cy="10" r="1.5" fill="#facc15"/>
+      <circle cx="15" cy="10" r="1.5" fill="#facc15"/>
+    </g>
+  `,
+
+  // Water Asset: Coast Guard Vessel
+  patrol_vessel: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Hull -->
+      <path d="M2 14 L5 8 L18 8 L22 14 L18 18 L5 18 Z" fill="#1e3a8a" stroke="#bfdbfe" stroke-width="0.8"/>
+      <!-- Coast Guard Diagonal Orange Stripe -->
+      <polygon points="7,8 10,8 8,18 5,18" fill="#ea580c"/>
+      <!-- Superstructure / Cabin -->
+      <rect x="10" y="4" width="7" height="4" fill="#ffffff" rx="0.5"/>
+      <rect x="12" y="5" width="2" height="2" fill="#38bdf8"/>
+      <!-- Radar Mast -->
+      <line x1="13" y1="1" x2="13" y2="4" stroke="#facc15" stroke-width="1"/>
+      <line x1="11" y1="2" x2="15" y2="2" stroke="#facc15" stroke-width="1"/>
+    </g>
+  `,
+
+  // Heavy Equipment / Excavator
+  heavy_equipment: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Continuous Tracks -->
+      <rect x="3" y="14" width="16" height="5" fill="#1e293b" rx="2" stroke="#f59e0b" stroke-width="0.8"/>
+      <circle cx="6" cy="16.5" r="1" fill="#cbd5e1"/>
+      <circle cx="11" cy="16.5" r="1" fill="#cbd5e1"/>
+      <circle cx="16" cy="16.5" r="1" fill="#cbd5e1"/>
+      <!-- Cab -->
+      <rect x="6" y="8" width="7" height="6" fill="#d97706" rx="1"/>
+      <rect x="7" y="9" width="3" height="3" fill="#bae6fd"/>
+      <!-- Boom Arm & Bucket -->
+      <path d="M12 10 L18 4 L22 8 L20 13 Z" fill="#b45309"/>
+      <path d="M20 13 L23 15 L21 18 Z" fill="#f59e0b"/>
+    </g>
+  `,
+
+  // Water Tanker Lorry
+  water_tanker: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Cylindrical Water Tank -->
+      <rect x="2" y="5" width="13" height="10" fill="#0284c7" rx="4" stroke="#e0f2fe" stroke-width="0.8"/>
+      <path d="M4 10 Q8 12 13 10" stroke="#bae6fd" stroke-width="1.2" fill="none"/>
+      <!-- Truck Cab -->
+      <rect x="15" y="8" width="7" height="7" fill="#0369a1" rx="1"/>
+      <rect x="17" y="9" width="4" height="3" fill="#7dd3fc"/>
+      <!-- Wheels -->
+      <circle cx="5" cy="16" r="2.5" fill="#0f172a" stroke="#94a3b8" stroke-width="1"/>
+      <circle cx="11" cy="16" r="2.5" fill="#0f172a" stroke="#94a3b8" stroke-width="1"/>
+      <circle cx="18" cy="16" r="2.5" fill="#0f172a" stroke="#94a3b8" stroke-width="1"/>
+    </g>
+  `,
+
+  // Mobile Comms Command Truck
+  comms_truck: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <!-- Satellite Dish Mast -->
+      <line x1="8" y1="1" x2="8" y2="7" stroke="#a855f7" stroke-width="1.5"/>
+      <path d="M5 2 C5 4 11 4 11 2 Z" fill="#d8b4fe"/>
+      <!-- Van Body -->
+      <rect x="2" y="7" width="14" height="9" fill="#6b21a8" rx="1"/>
+      <rect x="16" y="9" width="6" height="7" fill="#7e22ce" rx="1"/>
+      <rect x="17" y="10" width="3" height="3" fill="#e9d5ff"/>
+      <!-- Wheels -->
+      <circle cx="6" cy="16" r="2.5" fill="#0f172a" stroke="#c084fc" stroke-width="1"/>
+      <circle cx="18" cy="16" r="2.5" fill="#0f172a" stroke="#c084fc" stroke-width="1"/>
+    </g>
+  `,
+
+  // Medical Team
   medics: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M12 2 L20 5 L20 12 C20 17 12 21 12 21 C12 21 4 17 4 12 L4 5 Z" fill="#be185d" stroke="#fbcfe8" stroke-width="1"/>
@@ -77,7 +190,7 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // PNP Personnel - Philippine National Police officer badge with gold star
+  // PNP Personnel
   pnp_personnel: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M12 1 L15 5 L20 5 L16.5 9 L18 14 L12 11 L6 14 L7.5 9 L4 5 L9 5 Z" fill="#1e3a8a" stroke="#fbbf24" stroke-width="1.2"/>
@@ -87,7 +200,7 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // BFP Personnel - Bureau of Fire Protection helmet & flame emblem
+  // BFP Personnel
   bfp_personnel: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M12 2 L20 6 L18 17 C18 17 12 21 12 21 C12 21 6 17 6 17 L4 6 Z" fill="#c2410c" stroke="#fde047" stroke-width="1"/>
@@ -98,13 +211,68 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
     </g>
   `,
 
-  // AFP Personnel - Armed Forces HADR platoon chevrons & tactical star
+  // AFP Personnel
   afp_personnel: `
     <g transform="translate(1.5, 1.5) scale(0.88)">
       <path d="M12 2 L21 6 L21 13 C21 18 12 22 12 22 C12 22 3 18 3 13 L3 6 Z" fill="#14532d" stroke="#4ade80" stroke-width="1"/>
       <path d="M7 8 L12 12 L17 8" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M7 11 L12 15 L17 11" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <polygon points="12,15 12.8,16.5 14.5,16.5 13.1,17.5 13.6,19 12,18 10.4,19 10.9,17.5 9.5,16.5 11.2,16.5" fill="#ffffff"/>
+    </g>
+  `,
+
+  // Philippine Coast Guard Personnel
+  pcg_personnel: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 L21 6 L21 13 C21 18 12 22 12 22 C12 22 3 18 3 13 L3 6 Z" fill="#1d4ed8" stroke="#93c5fd" stroke-width="1"/>
+      <path d="M12 6 C9 6 7 8 7 11 C7 14 12 17 12 17 C12 17 17 14 17 11 C17 8 15 6 12 6 Z" fill="#ea580c"/>
+      <circle cx="12" cy="11" r="2.5" fill="#ffffff"/>
+      <path d="M12 9.5 L12 12.5 M10.5 11 L13.5 11" stroke="#1d4ed8" stroke-width="1.2"/>
+    </g>
+  `,
+
+  // Philippine Air Force Personnel
+  paf_personnel: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 L21 6 L21 13 C21 18 12 22 12 22 C12 22 3 18 3 13 L3 6 Z" fill="#0284c7" stroke="#bae6fd" stroke-width="1"/>
+      <!-- Aviator Wings Insignia -->
+      <polygon points="12,8 5,12 8,13 12,10 16,13 19,12" fill="#facc15"/>
+      <circle cx="12" cy="14" r="2" fill="#ffffff"/>
+      <circle cx="12" cy="14" r="1" fill="#dc2626"/>
+    </g>
+  `,
+
+  // Emergency Comms & Radio Group
+  comms_group: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 L20 6 L20 18 L12 22 L4 18 L4 6 Z" fill="#7e22ce" stroke="#f3e8ff" stroke-width="1"/>
+      <!-- Antenna Radio Waves -->
+      <line x1="12" y1="6" x2="12" y2="15" stroke="#fde047" stroke-width="1.8"/>
+      <circle cx="12" cy="5" r="1" fill="#fde047"/>
+      <path d="M8 8 C10 6 14 6 16 8" stroke="#fde047" stroke-width="1.2" fill="none"/>
+      <path d="M6 11 C9 8 15 8 18 11" stroke="#fde047" stroke-width="1.2" fill="none"/>
+    </g>
+  `,
+
+  // Volunteer & NGO Group
+  volunteer_group: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 C7 2 3 6 3 11 C3 16 12 22 12 22 C12 22 21 16 21 11 C21 6 17 2 12 2 Z" fill="#0d9488" stroke="#99f6e4" stroke-width="1"/>
+      <!-- Helping Hands Heart -->
+      <path d="M12 8 C10 6 7 7 7 10 C7 13 12 16 12 16 C12 16 17 13 17 10 C17 7 14 6 12 8 Z" fill="#f43f5e"/>
+    </g>
+  `,
+
+  // K9 Search & Rescue Team
+  k9_team: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 L20 6 L20 18 L12 22 L4 18 L4 6 Z" fill="#b45309" stroke="#fef3c7" stroke-width="1"/>
+      <!-- Dog Paw Print -->
+      <ellipse cx="12" cy="14" rx="2.5" ry="2" fill="#ffffff"/>
+      <circle cx="8.5" cy="10" r="1" fill="#ffffff"/>
+      <circle cx="11" cy="8.5" r="1" fill="#ffffff"/>
+      <circle cx="13" cy="8.5" r="1" fill="#ffffff"/>
+      <circle cx="15.5" cy="10" r="1" fill="#ffffff"/>
     </g>
   `
 };
@@ -179,7 +347,7 @@ export function createMarkerIcon(
     `;
   } else {
     // Pure icon without circle background for vehicles and personnel
-    const enhancedSvg = ENHANCED_ICON_SVGS[resourceTypeId];
+    const enhancedSvg = ENHANCED_ICON_SVGS[resourceTypeId] || '';
 
     markerContentHtml = `
       <div style="width:${size}px; height:${size}px;" class="flex items-center justify-center relative filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.85)] hover:scale-115 transition-transform duration-200">

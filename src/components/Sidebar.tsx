@@ -27,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
   };
 
   const renderIconBadge = (item: ResourceDefinition) => {
-    // Authentic ICS Cartographic Symbols (FEMA / NIMS)
+    // Authentic ICS Symbols rendering
     if (item.id === 'icp') {
       return (
         <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-md">
@@ -91,18 +91,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
       );
     }
 
-    // Pure icon without circle background for vehicles and personnel
-    const enhancedSvg = ENHANCED_ICON_SVGS[item.id];
+    // SVG icon without background circle
+    const enhancedSvg = ENHANCED_ICON_SVGS[item.id] || '';
 
     return (
-      <div className="w-10 h-10 flex items-center justify-center shrink-0 filter drop-shadow-md">
-        {enhancedSvg ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-            <g fill="none">{enhancedSvg}</g>
-          </svg>
-        ) : (
-          <span className="text-white font-bold text-xs">{item.name.substring(0, 2)}</span>
-        )}
+      <div className="w-9 h-9 flex items-center justify-center shrink-0 filter drop-shadow-md">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          dangerouslySetInnerHTML={{ __html: enhancedSvg }}
+        />
       </div>
     );
   };
@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
       <div className="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-300 flex items-start space-x-2">
         <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
         <span>
-          <strong>Drag any icon</strong> below directly onto the Camarines Norte map to preposition assets and command facilities.
+          <strong>Drag any icon</strong> directly onto the map to preposition assets and command facilities.
         </span>
       </div>
 
@@ -168,10 +168,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
           </TabsList>
         </div>
 
-        {/* Tab Content 1: Vehicles */}
+        {/* Tab Content 1: Vehicles & Craft */}
         <TabsContent value="vehicles" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Emergency Vehicles
+            Vehicles, Air & Water Craft
           </div>
           {getResources('vehicle').map(renderDraggableCard)}
         </TabsContent>
@@ -196,8 +196,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
         {/* Tab Content 4: Quick Town Locator */}
         <TabsContent value="locations" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span>Camarines Norte Towns</span>
-            <span className="text-[10px] text-slate-500">12 Municipalities</span>
+            <span>Map Municipalities</span>
+            <span className="text-[10px] text-slate-500">12 Towns</span>
           </div>
 
           <div className="grid grid-cols-1 gap-1.5">

@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="font-extrabold text-lg tracking-wide text-slate-100 flex items-center">
-              Camarines Norte Disaster Prepositioning
+              Incident Resource & Prepositioning Planner
             </h1>
             <Badge variant="outline" className="text-red-400 border-red-500/50 bg-red-950/40 text-[11px] font-mono">
               ICS Ready
@@ -58,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Input
               value={planTitle}
               onChange={(e) => setPlanTitle(e.target.value)}
-              className="h-7 w-64 bg-slate-800/80 border-slate-700 text-xs text-white focus-visible:ring-red-500 font-medium"
+              className="h-7 w-72 bg-slate-800/80 border-slate-700 text-xs text-white focus-visible:ring-red-500 font-medium"
               placeholder="Enter Plan Name..."
             />
           </div>
@@ -124,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600' 
               : 'border-slate-700 text-slate-300 hover:text-white bg-slate-800'
           }`}
-          title="Toggle Flood, Storm Surge, and Landslide Risk Polygons"
+          title="Toggle Hazard Overlay Polygons"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           <span className="hidden md:inline">{showHazards ? 'Hide Hazard Overlay' : 'Show Hazard Overlay'}</span>

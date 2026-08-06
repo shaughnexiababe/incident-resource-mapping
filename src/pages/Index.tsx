@@ -8,10 +8,10 @@ import { PrepositionedMarker, ResourceTypeId, PrepositionPlan } from '@/types/di
 import { INITIAL_MARKERS, RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
 import { showSuccess, showError } from '@/utils/toast';
 
-const STORAGE_KEY = 'camarines_norte_preposition_plan_v1';
+const STORAGE_KEY = 'incident_resource_preposition_plan_v2';
 
 const Index = () => {
-  const [planTitle, setPlanTitle] = useState<string>('Typhoon Preparedness Plan - Camarines Norte');
+  const [planTitle, setPlanTitle] = useState<string>('Multi-Hazard Operational Response Plan');
   const [markers, setMarkers] = useState<PrepositionedMarker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<PrepositionedMarker | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -35,7 +35,6 @@ const Index = () => {
     } catch (e) {
       console.error('Failed to parse saved plan:', e);
     }
-    // Fallback initial markers for first time
     setMarkers(INITIAL_MARKERS);
   }, []);
 
@@ -65,7 +64,6 @@ const Index = () => {
   const handleAddMarker = (resourceTypeId: ResourceTypeId, lat: number, lng: number) => {
     const resourceDef = RESOURCE_CATALOG.find((r) => r.id === resourceTypeId) || RESOURCE_CATALOG[0];
 
-    // Auto-detect closest municipality
     let closestTown = 'Daet (Capital)';
     let minDistance = Number.MAX_VALUE;
 
@@ -128,7 +126,7 @@ const Index = () => {
     const plan: PrepositionPlan = {
       id: `plan-${Date.now()}`,
       title: planTitle,
-      description: 'Camarines Norte Disaster Response Preposition Plan',
+      description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       markers,
@@ -156,7 +154,7 @@ const Index = () => {
     const plan: PrepositionPlan = {
       id: `plan-${Date.now()}`,
       title: planTitle,
-      description: 'Camarines Norte Disaster Response Preposition Plan',
+      description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       markers,
