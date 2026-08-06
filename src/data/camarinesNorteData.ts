@@ -68,7 +68,7 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     name: 'Medical Team',
     category: 'personnel',
     iconName: 'Cross',
-    color: '#ec4899', // Pink/Red cross
+    color: '#ec4899', // Pink
     badgeBg: 'bg-pink-100 text-pink-800 border-pink-300',
     description: 'Doctors, Nurses & First Responders Squad',
     defaultCallsign: 'TRIAGE-TEAM'
@@ -107,45 +107,45 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     agency: 'AFP'
   },
 
-  // ICS Standard Facilities
+  // ICS Standard Facilities (FEMA / NIMS Guidelines)
   {
     id: 'icp',
-    name: 'Incident Command Post',
+    name: 'Incident Command Post (ICP)',
     category: 'facility',
-    iconName: 'Radio',
-    color: '#7c3aed', // Purple
-    badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
-    description: 'Primary location for incident tactical operations',
+    iconName: 'ICS_ICP',
+    color: '#2563eb', // ICS Blue/White standard
+    badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
+    description: 'FEMA ICS Standard: Split Circle with ICP designation',
     defaultCallsign: 'CAM-NORTE-ICP'
   },
   {
     id: 'staging_area',
-    name: 'Staging Area',
+    name: 'Staging Area (S)',
     category: 'facility',
-    iconName: 'MapPin',
-    color: '#0284c7', // Sky Blue
-    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
-    description: 'Location where resources await tactical assignments',
+    iconName: 'ICS_S',
+    color: '#eab308', // ICS Yellow standard
+    badgeBg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    description: 'FEMA ICS Standard: Circle with letter S',
     defaultCallsign: 'STAGING-NORTH'
   },
   {
     id: 'camp',
-    name: 'Camp Facility',
+    name: 'Camp Facility (C)',
     category: 'facility',
-    iconName: 'Tent',
-    color: '#059669', // Emerald
+    iconName: 'ICS_C',
+    color: '#16a34a', // ICS Green standard
     badgeBg: 'bg-green-100 text-green-800 border-green-300',
-    description: 'Accommodations and support services for personnel',
+    description: 'FEMA ICS Standard: Circle with letter C',
     defaultCallsign: 'BASE-CAMP-1'
   },
   {
     id: 'base',
-    name: 'Base Facility',
+    name: 'Base Facility (B)',
     category: 'facility',
-    iconName: 'Building2',
-    color: '#475569', // Slate
-    badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
-    description: 'Primary logistics and administrative facility hub',
+    iconName: 'ICS_B',
+    color: '#0284c7', // ICS Blue-Gray standard
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+    description: 'FEMA ICS Standard: Circle with letter B',
     defaultCallsign: 'LOGISTICS-BASE'
   }
 ];
@@ -199,7 +199,7 @@ export const INITIAL_MARKERS = [
     id: 'init-1',
     resourceTypeId: 'icp' as const,
     title: 'PDRRMO Central Command',
-    notes: 'Primary Command Center setup at Provincial Capitol Grounds',
+    notes: 'Primary Incident Command Post setup at Provincial Capitol Grounds',
     lat: 14.1150,
     lng: 122.9560,
     status: 'ready' as const,
@@ -212,7 +212,7 @@ export const INITIAL_MARKERS = [
   {
     id: 'init-2',
     resourceTypeId: 'staging_area' as const,
-    title: 'Labo North Staging',
+    title: 'Labo North Staging Area',
     notes: 'Heavy equipment and rescue teams ready for dispatch',
     lat: 14.1550,
     lng: 122.8350,

@@ -12,19 +12,50 @@ const ICON_SVGS: Record<string, string> = {
   UserCheck: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>`,
   Users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
   UserCog: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/>`,
-  Radio: `<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2"/>`,
-  MapPin: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`,
-  Tent: `<path d="M19 20 10 4 1 20h18z"/><path d="M10 4v16"/><path d="m14 20-4-7-4 7"/>`,
-  Building2: `<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>`
+  MapPin: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`
 };
 
 export function createMarkerIcon(resourceTypeId: ResourceTypeId, title: string, quantity: number = 1): L.DivIcon {
   const resource = RESOURCE_CATALOG.find((r) => r.id === resourceTypeId) || RESOURCE_CATALOG[0];
-  const svgPath = ICON_SVGS[resource.iconName] || ICON_SVGS['MapPin'];
   const color = resource.color;
 
-  const html = `
-    <div class="relative group cursor-pointer transform hover:scale-110 transition-transform">
+  let markerContentHtml = '';
+
+  // Standard ICS Facility Map Symbology
+  if (resourceTypeId === 'icp') {
+    // Incident Command Post: Circle divided horizontally (Top Blue, Bottom White with ICP text)
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 shadow-xl overflow-hidden bg-white flex flex-col items-center justify-center relative">
+        <div class="w-full h-1/2 bg-blue-600"></div>
+        <div class="w-full h-1/2 bg-white"></div>
+        <span class="absolute text-[11px] font-extrabold text-slate-900 tracking-tighter">ICP</span>
+      </div>
+    `;
+  } else if (resourceTypeId === 'staging_area') {
+    // Staging Area: Circle with bold "S"
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-lg shadow-xl">
+        S
+      </div>
+    `;
+  } else if (resourceTypeId === 'camp') {
+    // Camp Facility: Circle with bold "C"
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-xl">
+        C
+      </div>
+    `;
+  } else if (resourceTypeId === 'base') {
+    // Base Facility: Circle with bold "B"
+    markerContentHtml = `
+      <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-lg shadow-xl">
+        B
+      </div>
+    `;
+  } else {
+    // Standard vehicle or personnel resource icon
+    const svgPath = ICON_SVGS[resource.iconName] || ICON_SVGS['MapPin'];
+    markerContentHtml = `
       <div 
         class="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white shadow-lg text-white font-bold"
         style="background-color: ${color}; box-shadow: 0 4px 14px rgba(0,0,0,0.35);"
@@ -33,16 +64,22 @@ export function createMarkerIcon(resourceTypeId: ResourceTypeId, title: string, 
           ${svgPath}
         </svg>
       </div>
+    `;
+  }
+
+  const html = `
+    <div class="relative group cursor-pointer transform hover:scale-110 transition-transform">
+      ${markerContentHtml}
 
       ${quantity > 1 ? `
-        <span class="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-white shadow">
+        <span class="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-white shadow z-10">
           x${quantity}
         </span>
       ` : ''}
 
       <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block z-50 pointer-events-none">
-        <div class="bg-slate-900 text-white text-xs px-2 py-1 rounded shadow-md whitespace-nowrap">
-          <span class="font-semibold">${title}</span>
+        <div class="bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-lg whitespace-nowrap border border-slate-700">
+          <span class="font-bold text-slate-100">${title}</span>
           <span class="block text-[10px] text-slate-300 font-normal">${resource.name}</span>
         </div>
       </div>

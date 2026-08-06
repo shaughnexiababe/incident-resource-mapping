@@ -10,10 +10,7 @@ import {
   UserCheck, 
   Users, 
   UserCog, 
-  Radio, 
   MapPin, 
-  Tent, 
-  Building2,
   Info,
   GripVertical,
   Navigation
@@ -31,10 +28,7 @@ const LucideIconMap: Record<string, React.ElementType> = {
   UserCheck,
   Users,
   UserCog,
-  Radio,
   MapPin,
-  Tent,
-  Building2,
 };
 
 interface SidebarProps {
@@ -53,9 +47,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const renderDraggableCard = (item: ResourceDefinition) => {
-    const IconComponent = LucideIconMap[item.iconName] || MapPin;
+  const renderIconBadge = (item: ResourceDefinition) => {
+    // Authentic ICS Symbols rendering
+    if (item.id === 'icp') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex flex-col items-center justify-center relative overflow-hidden shrink-0 shadow-sm">
+          <div className="w-full h-1/2 bg-blue-600"></div>
+          <div className="w-full h-1/2 bg-white"></div>
+          <span className="absolute text-[10px] font-black text-slate-900 tracking-tight">ICP</span>
+        </div>
+      );
+    }
+    if (item.id === 'staging_area') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-yellow-400 text-slate-950 flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+          S
+        </div>
+      );
+    }
+    if (item.id === 'camp') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+          C
+        </div>
+      );
+    }
+    if (item.id === 'base') {
+      return (
+        <div className="w-9 h-9 rounded-full border-2 border-slate-900 bg-sky-700 text-white flex items-center justify-center font-black text-base shrink-0 shadow-sm">
+          B
+        </div>
+      );
+    }
 
+    const IconComponent = LucideIconMap[item.iconName] || MapPin;
+    return (
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm"
+        style={{ backgroundColor: item.color }}
+      >
+        <IconComponent className="w-5 h-5" />
+      </div>
+    );
+  };
+
+  const renderDraggableCard = (item: ResourceDefinition) => {
     return (
       <div
         key={item.id}
@@ -67,12 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
           <GripVertical className="w-4 h-4" />
         </div>
 
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm"
-          style={{ backgroundColor: item.color }}
-        >
-          <IconComponent className="w-5 h-5" />
-        </div>
+        {renderIconBadge(item)}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
@@ -139,8 +170,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
 
         {/* Tab Content 3: ICS Facilities */}
         <TabsContent value="facilities" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Incident Command System (ICS)
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>Incident Command System (ICS)</span>
+            <span className="text-[9px] bg-blue-900/60 text-blue-300 px-1.5 py-0.5 rounded border border-blue-700">FEMA Standard</span>
           </div>
           {getResources('facility').map(renderDraggableCard)}
         </TabsContent>
@@ -172,14 +204,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onMunicipalitySelect }) => {
 
       {/* Legend Footer */}
       <div className="p-3 bg-slate-950/80 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
-        <div className="font-bold text-slate-300">Quick Instructions:</div>
-        <div className="flex items-center space-x-1.5 text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Click marker on map to view / edit notes</span>
-        </div>
-        <div className="flex items-center space-x-1.5 text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-          <span>Drag markers on map to reposition lat/lng</span>
+        <div className="font-bold text-slate-300">FEMA / ICS Map Legend:</div>
+        <div className="grid grid-cols-2 gap-1 text-[10px]">
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-600 border border-white inline-block"></span> ICP (Split Blue/White)</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 text-black font-bold text-[8px] flex items-center justify-center">S</span> Staging Area</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600 text-white font-bold text-[8px] flex items-center justify-center">C</span> Camp</div>
+          <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-sky-700 text-white font-bold text-[8px] flex items-center justify-center">B</span> Base</div>
         </div>
       </div>
     </aside>
