@@ -108,9 +108,9 @@ const Index = () => {
   }, []);
 
   // Handle Map Drawing Clicks
-  const handleMapClickDuringDraw = (lat: number, lng: number) => {
+  const handleMapClickDuringDraw = useCallback((lat: number, lng: number) => {
     setDraftPoints((prev) => [...prev, [lat, lng]]);
-  };
+  }, []);
 
   // Finish Area Drawing
   const handleFinishDrawArea = () => {

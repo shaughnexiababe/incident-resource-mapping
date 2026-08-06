@@ -89,7 +89,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     if (!map) return;
 
     const handleMapClick = (e: L.LeafletMouseEvent) => {
-      if (drawMode !== 'none') {
+      if (drawMode !== 'none' && e.latlng) {
         onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
       }
     };
@@ -110,6 +110,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     if (drawMode !== 'none' && draftPoints.length > 0) {
       // Draw point markers
       draftPoints.forEach((pt, index) => {
+        if (!pt || pt.length !== 2 || isNaN(pt[0]) || isNaN(pt[1])) return;
         const circle = L.circleMarker(pt, {
           radius: 5,
           color: '#ffffff',
@@ -117,19 +118,32 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           fillOpacity: 1,
           weight: 2,
         });
-        circle.bindTooltip(`Pt ${index + 1}`, { permanent: true, direction: 'top', className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0' });
+        circle.bindTooltip(`Pt ${index + 1}`, { 
+          permanent: true, 
+          direction: 'top', 
+          className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow' 
+        });
         draftGroup.addLayer(circle);
       });
 
-      if (draftPoints.length >= 2) {
-        if (drawMode === 'route') {
+      if (drawMode === 'route' && draftPoints.length >= 2) {
+        const polyline = L.polyline(draftPoints, {
+          color: '#10b981',
+          weight: 4,
+          dashArray: '6, 6',
+        });
+        draftGroup.addLayer(polyline);
+      } else if (drawMode === 'area') {
+        if (draftPoints.length === 2) {
+          // 2 points preview as a polyline line segment
           const polyline = L.polyline(draftPoints, {
-            color: '#10b981',
-            weight: 4,
-            dashArray: '6, 6',
+            color: '#3b82f6',
+            weight: 3,
+            dashArray: '4, 4',
           });
           draftGroup.addLayer(polyline);
-        } else if (drawMode === 'area') {
+        } else if (draftPoints.length >= 3) {
+          // 3+ points preview as a polygon
           const polygon = L.polygon(draftPoints, {
             color: '#3b82f6',
             fillColor: '#3b82f6',
@@ -160,37 +174,47 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     // Add or update areas
     areas.forEach((areaData) => {
+      if (!areaData.points || areaData.points.length < 3) return;
+      const validPoints = areaData.points.filter(
+        (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+      );
+      if (validPoints.length < 3) return;
+
       const existing = savedAreaPolygonsRef.current.get(areaData.id);
 
       if (existing) {
-        existing.setLatLngs(areaData.points as L.LatLngExpression[]);
+        existing.setLatLngs(validPoints as L.LatLngExpression[]);
         existing.setStyle({
-          color: areaData.color,
-          fillColor: areaData.color,
-          fillOpacity: areaData.opacity || 0.3,
+          color: areaData.color || '#3b82f6',
+          fillColor: areaData.color || '#3b82f6',
+          fillOpacity: areaData.opacity ?? 0.3,
         });
       } else {
-        const polygon = L.polygon(areaData.points as L.LatLngExpression[], {
-          color: areaData.color,
-          fillColor: areaData.color,
-          fillOpacity: areaData.opacity || 0.3,
-          weight: 2.5,
-        }).addTo(map);
+        try {
+          const polygon = L.polygon(validPoints as L.LatLngExpression[], {
+            color: areaData.color || '#3b82f6',
+            fillColor: areaData.color || '#3b82f6',
+            fillOpacity: areaData.opacity ?? 0.3,
+            weight: 2.5,
+          }).addTo(map);
 
-        polygon.bindTooltip(
-          `<div class="font-sans text-xs">
-            <strong class="font-bold text-white block uppercase">${areaData.name}</strong>
-            ${areaData.notes ? `<span class="text-[10px] text-slate-300 block">${areaData.notes}</span>` : ''}
-          </div>`,
-          { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' }
-        );
+          polygon.bindTooltip(
+            `<div class="font-sans text-xs">
+              <strong class="font-bold text-white block uppercase">${areaData.name}</strong>
+              ${areaData.notes ? `<span class="text-[10px] text-slate-300 block">${areaData.notes}</span>` : ''}
+            </div>`,
+            { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' }
+          );
 
-        polygon.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          if (onAreaSelect) onAreaSelect(areaData);
-        });
+          polygon.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            if (onAreaSelect) onAreaSelect(areaData);
+          });
 
-        savedAreaPolygonsRef.current.set(areaData.id, polygon);
+          savedAreaPolygonsRef.current.set(areaData.id, polygon);
+        } catch (err) {
+          console.error('Error adding area polygon:', err);
+        }
       }
     });
   }, [areas, onAreaSelect]);
@@ -212,35 +236,45 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     // Add or update routes
     routes.forEach((routeData) => {
+      if (!routeData.points || routeData.points.length < 2) return;
+      const validPoints = routeData.points.filter(
+        (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+      );
+      if (validPoints.length < 2) return;
+
       const existing = savedRoutePolylinesRef.current.get(routeData.id);
 
       if (existing) {
-        existing.setLatLngs(routeData.points as L.LatLngExpression[]);
+        existing.setLatLngs(validPoints as L.LatLngExpression[]);
         existing.setStyle({
-          color: routeData.color,
+          color: routeData.color || '#10b981',
           dashArray: routeData.isDashed ? '8, 8' : undefined,
         });
       } else {
-        const polyline = L.polyline(routeData.points as L.LatLngExpression[], {
-          color: routeData.color,
-          weight: 4,
-          dashArray: routeData.isDashed ? '8, 8' : undefined,
-        }).addTo(map);
+        try {
+          const polyline = L.polyline(validPoints as L.LatLngExpression[], {
+            color: routeData.color || '#10b981',
+            weight: 4,
+            dashArray: routeData.isDashed ? '8, 8' : undefined,
+          }).addTo(map);
 
-        polyline.bindTooltip(
-          `<div class="font-sans text-xs">
-            <strong class="font-bold text-white block">${routeData.name}</strong>
-            <span class="text-[10px] text-slate-300 block capitalize">${routeData.type} Corridor</span>
-          </div>`,
-          { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' }
-        );
+          polyline.bindTooltip(
+            `<div class="font-sans text-xs">
+              <strong class="font-bold text-white block">${routeData.name}</strong>
+              <span class="text-[10px] text-slate-300 block capitalize">${routeData.type} Corridor</span>
+            </div>`,
+            { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' }
+          );
 
-        polyline.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          if (onRouteSelect) onRouteSelect(routeData);
-        });
+          polyline.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            if (onRouteSelect) onRouteSelect(routeData);
+          });
 
-        savedRoutePolylinesRef.current.set(routeData.id, polyline);
+          savedRoutePolylinesRef.current.set(routeData.id, polyline);
+        } catch (err) {
+          console.error('Error adding route polyline:', err);
+        }
       }
     });
   }, [routes, onRouteSelect]);
@@ -269,23 +303,27 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         if (hazard.type === 'storm_surge') color = '#06b6d4';
         if (hazard.type === 'landslide') color = '#d97706';
 
-        const polygon = L.polygon(hazard.coordinates as L.LatLngExpression[], {
-          color,
-          fillColor: color,
-          fillOpacity: 0.35,
-          weight: 2,
-          dashArray: '5, 5',
-        }).addTo(map);
+        try {
+          const polygon = L.polygon(hazard.coordinates as L.LatLngExpression[], {
+            color,
+            fillColor: color,
+            fillOpacity: 0.35,
+            weight: 2,
+            dashArray: '5, 5',
+          }).addTo(map);
 
-        polygon.bindTooltip(
-          `<div class="font-sans">
-            <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">${hazard.name}</strong>
-            <span class="text-[11px] text-slate-700">${hazard.description}</span>
-          </div>`,
-          { sticky: true }
-        );
+          polygon.bindTooltip(
+            `<div class="font-sans">
+              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">${hazard.name}</strong>
+              <span class="text-[11px] text-slate-700">${hazard.description}</span>
+            </div>`,
+            { sticky: true }
+          );
 
-        hazardPolygonsRef.current.push(polygon);
+          hazardPolygonsRef.current.push(polygon);
+        } catch (e) {
+          console.error('Error rendering hazard overlay:', e);
+        }
       });
     }
   }, [showHazards]);
