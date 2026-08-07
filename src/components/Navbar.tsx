@@ -71,11 +71,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="font-extrabold text-lg tracking-wide text-slate-100 flex items-center">
-              Incident Resource & Prepositioning Planner
+              GEOTACTICAL COMMAND
             </h1>
-            <Badge variant="outline" className="text-red-400 border-red-500/50 bg-red-950/40 text-[11px] font-mono">
-              ICS Ready
-            </Badge>
+            <div className="h-4 w-px bg-slate-700 mx-1" />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+              Camarines Norte Division
+            </span>
           </div>
           <div className="flex items-center space-x-2 mt-0.5">
             <Input
