@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Save, RotateCcw, Download, Upload, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
+import { Shield, Save, RotateCcw, Download, Upload, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -208,6 +208,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <Upload className="w-3.5 h-3.5 text-slate-300" />
           <span className="hidden sm:inline">Import</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.print()}
+          className="h-8 text-xs font-medium gap-1.5 border-slate-700 text-slate-300 hover:text-white bg-slate-800"
+          title="Print the current map view"
+        >
+          <Printer className="w-3.5 h-3.5 text-slate-300" />
+          <span className="hidden sm:inline">Print Map</span>
         </Button>
 
         <Button
