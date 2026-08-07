@@ -118,9 +118,13 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
+      const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+
       // Add Search / Geocoder Control
       // @ts-ignore - leaflet-control-geocoder types can be finicky with L namespace
       const geocoder = L.Control.geocoder({
+        // @ts-ignore
+        geocoder: L.Control.Geocoder.mapbox({ apiKey: accessToken }),
         defaultMarkGeocode: false,
         placeholder: "Search location...",
         collapsed: true,
@@ -138,9 +142,14 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       })
       .addTo(map);
 
-      tileLayerRef.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Use Mapbox Dark style for a premium tactical look
+      const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${accessToken}`;
+
+      tileLayerRef.current = L.tileLayer(mapboxUrl, {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        tileSize: 512,
+        zoomOffset: -1,
+        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
       map.on('zoomend', () => {
