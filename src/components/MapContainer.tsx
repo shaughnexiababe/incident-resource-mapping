@@ -4,9 +4,8 @@ import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } 
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
-import * as esri from 'esri-leaflet';
-import * as geocoding from 'esri-leaflet-geocoder';
-import 'esri-leaflet-geocoder/dist/esri-leaflet-geocoder.css';
+import 'leaflet-control-geocoder';
+import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
@@ -121,23 +120,25 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Add Search / Geocoder Control using ArcGIS World Geocoding Service
+      // Add Search / Geocoder Control using OpenStreetMap Nominatim
       // @ts-ignore
-      const searchControl = geocoding.geosearch({
-        position: 'topright',
-        placeholder: 'Search for exact location...',
-        useMapBounds: false,
-        expanded: false,
-        collapseAfterResult: true
-      }).addTo(map);
-
-      // Handle search results
-      searchControl.on('results', (data: any) => {
-        if (data.results && data.results.length > 0) {
-          const result = data.results[0];
-          map.fitBounds(result.bounds);
-        }
-      });
+      const geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        placeholder: "Search location...",
+        collapsed: true,
+        position: 'topright'
+      })
+      .on('markgeocode', (e: any) => {
+        const bbox = e.geocode.bbox;
+        const poly = L.polygon([
+          bbox.getSouthEast(),
+          bbox.getNorthEast(),
+          bbox.getNorthWest(),
+          bbox.getSouthWest()
+        ]);
+        map.fitBounds(poly.getBounds());
+      })
+      .addTo(map);
 
       // Initialize Geoman Controls
       // @ts-ignore
@@ -167,12 +168,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         }
       });
 
-      // Use ArcGIS World Streets for a clean, highly detailed light mode look
-      const arcgisUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+      // Use standard OpenStreetMap tiles
+      const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-      tileLayerRef.current = L.tileLayer(arcgisUrl, {
+      tileLayerRef.current = L.tileLayer(osmUrl, {
         maxZoom: 19,
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
       map.on('zoomend', () => {

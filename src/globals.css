@@ -97,48 +97,47 @@
   touch-action: manipulation;
 }
 
-/* Dark mode styling for ArcGIS Geosearch Control */
-.geocoder-control {
+/* Dark mode styling for Leaflet Search Control */
+.leaflet-control-geocoder {
   background-color: #0f172a !important; /* slate-900 */
   border: 1px solid #334155 !important; /* slate-700 */
   border-radius: 8px !important;
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3) !important;
-  color: #f8fafc !important;
 }
 
-.geocoder-control-input {
+.leaflet-control-geocoder-icon {
+  background-color: transparent !important;
+  filter: invert(1) brightness(2);
+}
+
+.leaflet-control-geocoder-form input {
   background-color: #1e293b !important; /* slate-800 */
-  color: #f8fafc !important;
+  color: #f8fafc !important; /* slate-50 */
   border: none !important;
-  border-radius: 6px !important;
-  padding: 8px 12px 8px 35px !important;
   font-size: 13px !important;
-  width: 240px !important;
+  padding: 8px 12px !important;
 }
 
-.geocoder-control-suggestions {
+.leaflet-control-geocoder-results {
   background-color: #0f172a !important;
   border: 1px solid #334155 !important;
   border-radius: 0 0 8px 8px !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3) !important;
 }
 
-.geocoder-control-suggestion {
+.leaflet-control-geocoder-result {
   color: #cbd5e1 !important; /* slate-300 */
   padding: 8px 12px !important;
   font-size: 12px !important;
-  border-bottom: 1px solid #1e293b !important;
 }
 
-.geocoder-control-suggestion:hover,
-.geocoder-control-suggestion.geocoder-control-selected {
+.leaflet-control-geocoder-result:hover {
   background-color: #1e293b !important;
   color: #ffffff !important;
 }
 
-/* Adjust the search icon visibility */
-.geocoder-control-input::before {
-  filter: invert(1) brightness(2);
+.leaflet-control-geocoder-result-selected {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
 }
 
 .leaflet-control-geocoder-alternatives {
