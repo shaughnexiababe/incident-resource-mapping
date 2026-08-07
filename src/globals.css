@@ -97,6 +97,53 @@
   touch-action: manipulation;
 }
 
+/* Dark mode styling for Leaflet Search Control */
+.leaflet-control-geocoder {
+  background-color: #0f172a !important; /* slate-900 */
+  border: 1px solid #334155 !important; /* slate-700 */
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3) !important;
+}
+
+.leaflet-control-geocoder-icon {
+  background-color: transparent !important;
+  filter: invert(1) brightness(2);
+}
+
+.leaflet-control-geocoder-form input {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #f8fafc !important; /* slate-50 */
+  border: none !important;
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+}
+
+.leaflet-control-geocoder-results {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+.leaflet-control-geocoder-result {
+  color: #cbd5e1 !important; /* slate-300 */
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+}
+
+.leaflet-control-geocoder-result:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-geocoder-result-selected {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-geocoder-alternatives {
+  border-top: 1px solid #334155 !important;
+}
+
 @media print {
   @page {
     size: landscape;

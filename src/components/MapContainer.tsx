@@ -4,6 +4,8 @@ import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } 
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
+import 'leaflet-control-geocoder';
+import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 
 export interface MapContainerProps {
   markers: PrepositionedMarker[];
@@ -115,6 +117,26 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       });
 
       L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // Add Search / Geocoder Control
+      // @ts-ignore - leaflet-control-geocoder types can be finicky with L namespace
+      const geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        placeholder: "Search location...",
+        collapsed: true,
+        position: 'topright'
+      })
+      .on('markgeocode', (e: any) => {
+        const bbox = e.geocode.bbox;
+        const poly = L.polygon([
+          bbox.getSouthEast(),
+          bbox.getNorthEast(),
+          bbox.getNorthWest(),
+          bbox.getSouthWest()
+        ]);
+        map.fitBounds(poly.getBounds());
+      })
+      .addTo(map);
 
       tileLayerRef.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
