@@ -1,33 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Lock, Map as MapIcon, ChevronRight } from 'lucide-react';
+import { Shield, Lock, Map as MapIcon, ChevronRight, Mail } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
-const ACCESS_CODE = 'MISSION-READY'; // Simple demo access code
-
 const Login = () => {
-  const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate a brief secure check
-    setTimeout(() => {
-      if (code.toUpperCase() === ACCESS_CODE) {
-        sessionStorage.setItem('is_authenticated', 'true');
-        showSuccess('Secure connection established. Welcome, Commander.');
-        navigate('/');
-      } else {
-        showError('Invalid Access Code. Authorization denied.');
-      }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      showSuccess('Secure connection established. Welcome, Commander.');
+      navigate('/');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      showError(error.message || 'Invalid credentials. Authorization denied.');
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -57,17 +57,35 @@ const Login = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">
-                Security Access Code
+                Authorized Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Input
+                  type="email"
+                  placeholder="name@agency.gov..."
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 bg-slate-950/50 border-slate-800 text-white focus-visible:ring-red-600 h-12"
+                  autoFocus
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">
+                Secure Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
                   type="password"
-                  placeholder="Enter your authorization code..."
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 bg-slate-950/50 border-slate-800 text-white focus-visible:ring-red-600 h-12"
-                  autoFocus
+                  required
                 />
               </div>
             </div>
@@ -75,7 +93,7 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white font-bold h-12 gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-[0.98]"
-              disabled={isLoading || !code}
+              disabled={isLoading}
             >
               {isLoading ? 'Verifying...' : 'Initialize Mission Dashboard'}
               <ChevronRight className="w-4 h-4" />
