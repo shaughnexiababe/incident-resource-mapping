@@ -14,4 +14,14 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/leaflet")) return "leaflet";
+          if (id.includes("node_modules/@radix-ui")) return "radix-vendor";
+        },
+      },
+    },
+  },
 }));

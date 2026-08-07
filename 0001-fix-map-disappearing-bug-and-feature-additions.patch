@@ -1,0 +1,946 @@
+From 3fa92d3f98c65bbb14c286eaf3492c885b8e0080 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Fri, 7 Aug 2026 00:30:17 +0000
+Subject: [PATCH] Fix persistent map-disappearing bug, add ErrorBoundary,
+ tap-to-place, plan import, code-splitting, haversine distance
+
+- Add top-level React ErrorBoundary (previously none existed, so ANY
+  uncaught render/effect exception silently blanked the entire app -
+  the most likely cause of the map-disappearing bug surviving two
+  prior fix attempts, since those only guarded individual Leaflet
+  calls, not the app as a whole).
+- Guard the one remaining unguarded Leaflet call (createMarkerIcon)
+  and validate marker coordinates before rendering.
+- Dedupe/validate draft points before they reach Leaflet's
+  polygon/polyline renderer to avoid degenerate geometry.
+- Fix missing min-h-0 on the map's flex container (classic flexbox
+  collapse bug).
+- Force map.invalidateSize() when any modal opens/closes, since
+  Radix Dialog/Sheet body-scroll-lock layout shifts aren't always
+  caught by a container-only ResizeObserver.
+- Add tap-to-place mobile fallback (HTML5 drag-and-drop never fires
+  on touch devices): tap a resource card to arm it, tap the map to
+  place, stays armed for placing multiples.
+- Add Import Plan (JSON) next to Export, with runtime validation.
+- Seed INITIAL_MARKERS on first visit instead of a blank map.
+- Lazy-load MapContainer/Leaflet + manual Vite chunks for
+  Leaflet/Radix, eliminating the >500KB single-bundle build warning.
+- Replace naive Math.hypot lat/lng distance with proper haversine
+  for nearest-municipality lookup.
+- Fix 3 pre-existing lint errors (empty interfaces, require() import).
+- Remove orphaned/unused src/utils/geo.ts left over from a prior
+  incomplete session.
+
+Verified: tsc --noEmit clean, eslint 0 errors, vite build succeeds
+with split chunks (leaflet 149KB, radix 113KB, main 372KB vs prior
+single 631KB bundle).
+---
+ src/App.tsx                      |  29 ++--
+ src/components/ErrorBoundary.tsx | 104 ++++++++++++++
+ src/components/MapContainer.tsx  |  75 ++++++++--
+ src/components/Navbar.tsx        |  36 ++++-
+ src/components/Sidebar.tsx       |  24 +++-
+ src/components/ui/command.tsx    |   2 +-
+ src/components/ui/textarea.tsx   |   2 +-
+ src/lib/utils.ts                 |  31 ++++
+ src/pages/Index.tsx              | 233 ++++++++++++++++++++++++++-----
+ tailwind.config.ts               |   3 +-
+ vite.config.ts                   |  10 ++
+ 11 files changed, 479 insertions(+), 70 deletions(-)
+ create mode 100644 src/components/ErrorBoundary.tsx
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 18daf2e..57be8c4 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -3,25 +3,28 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
+ import { TooltipProvider } from "@/components/ui/tooltip";
+ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+ import { BrowserRouter, Routes, Route } from "react-router-dom";
++import { ErrorBoundary } from "@/components/ErrorBoundary";
+ import Index from "./pages/Index";
+ import NotFound from "./pages/NotFound";
+ 
+ const queryClient = new QueryClient();
+ 
+ const App = () => (
+-  <QueryClientProvider client={queryClient}>
+-    <TooltipProvider>
+-      <Toaster />
+-      <Sonner />
+-      <BrowserRouter>
+-        <Routes>
+-          <Route path="/" element={<Index />} />
+-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+-          <Route path="*" element={<NotFound />} />
+-        </Routes>
+-      </BrowserRouter>
+-    </TooltipProvider>
+-  </QueryClientProvider>
++  <ErrorBoundary>
++    <QueryClientProvider client={queryClient}>
++      <TooltipProvider>
++        <Toaster />
++        <Sonner />
++        <BrowserRouter>
++          <Routes>
++            <Route path="/" element={<Index />} />
++            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
++            <Route path="*" element={<NotFound />} />
++          </Routes>
++        </BrowserRouter>
++      </TooltipProvider>
++    </QueryClientProvider>
++  </ErrorBoundary>
+ );
+ 
+ export default App;
+diff --git a/src/components/ErrorBoundary.tsx b/src/components/ErrorBoundary.tsx
+new file mode 100644
+index 0000000..078b4c9
+--- /dev/null
++++ b/src/components/ErrorBoundary.tsx
+@@ -0,0 +1,104 @@
++import React from 'react';
++import { AlertTriangle, RotateCcw, Download } from 'lucide-react';
++
++interface ErrorBoundaryProps {
++  children: React.ReactNode;
++}
++
++interface ErrorBoundaryState {
++  hasError: boolean;
++  error: Error | null;
++}
++
++const STORAGE_KEY = 'incident_resource_preposition_plan_v4';
++
++/**
++ * Top-level safety net.
++ *
++ * Without this, any uncaught exception anywhere in the render tree (a bad
++ * marker loaded from localStorage, a Leaflet call throwing on malformed
++ * geometry, etc.) unmounts the ENTIRE app with no message — which looks
++ * exactly like "the map disappeared". This boundary catches that, shows a
++ * recoverable screen instead of a blank page, and gives the user a way to
++ * back up or clear their saved plan without losing everything silently.
++ */
++export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
++  constructor(props: ErrorBoundaryProps) {
++    super(props);
++    this.state = { hasError: false, error: null };
++  }
++
++  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
++    return { hasError: true, error };
++  }
++
++  componentDidCatch(error: Error, info: React.ErrorInfo) {
++    console.error('Application crashed:', error, info.componentStack);
++  }
++
++  handleReload = () => {
++    this.setState({ hasError: false, error: null });
++    window.location.reload();
++  };
++
++  handleExportAndClear = () => {
++    try {
++      const saved = localStorage.getItem(STORAGE_KEY);
++      if (saved) {
++        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(saved);
++        const a = document.createElement('a');
++        a.setAttribute('href', dataStr);
++        a.setAttribute('download', 'recovered_plan_backup.json');
++        document.body.appendChild(a);
++        a.click();
++        a.remove();
++      }
++    } catch (e) {
++      console.error('Failed to export backup during crash recovery:', e);
++    } finally {
++      localStorage.removeItem(STORAGE_KEY);
++      window.location.reload();
++    }
++  };
++
++  render() {
++    if (this.state.hasError) {
++      return (
++        <div className="flex flex-col items-center justify-center h-screen w-screen bg-slate-950 text-slate-100 p-6 text-center">
++          <div className="max-w-md space-y-4">
++            <div className="mx-auto w-14 h-14 rounded-full bg-red-950 border border-red-800 flex items-center justify-center">
++              <AlertTriangle className="w-7 h-7 text-red-400" />
++            </div>
++            <h1 className="text-lg font-bold text-white">Something went wrong loading the map</h1>
++            <p className="text-sm text-slate-400">
++              The app hit an unexpected error and had to stop rendering, most likely caused by
++              corrupted or incompatible saved plan data. Your saved plan is still in this
++              browser's storage — you can back it up before clearing it.
++            </p>
++            {this.state.error && (
++              <pre className="text-left text-[10px] text-red-300 bg-slate-900 border border-slate-800 rounded p-2 overflow-auto max-h-32">
++                {this.state.error.message}
++              </pre>
++            )}
++            <div className="flex items-center justify-center gap-2 pt-2">
++              <button
++                onClick={this.handleReload}
++                className="flex items-center gap-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-2 rounded-lg"
++              >
++                <RotateCcw className="w-3.5 h-3.5" /> Reload
++              </button>
++              <button
++                onClick={this.handleExportAndClear}
++                className="flex items-center gap-1.5 text-xs font-semibold bg-red-900/60 hover:bg-red-800 border border-red-800 text-red-100 px-3 py-2 rounded-lg"
++              >
++                <Download className="w-3.5 h-3.5" /> Backup &amp; Clear Saved Plan
++              </button>
++            </div>
++          </div>
++        </div>
++      );
++    }
++
++    return this.props.children;
++  }
++}
+diff --git a/src/components/MapContainer.tsx b/src/components/MapContainer.tsx
+index 6a78be6..5273746 100644
+--- a/src/components/MapContainer.tsx
++++ b/src/components/MapContainer.tsx
+@@ -20,6 +20,18 @@ interface MapContainerProps {
+   drawMode: 'none' | 'area' | 'route';
+   draftPoints: [number, number][];
+   onMapClickDuringDraw: (lat: number, lng: number) => void;
++  /** Resource id currently "armed" for tap-to-place, or null. This is the
++   * touch-device fallback for drag-and-drop placement, which never fires
++   * on mobile/tablet browsers. */
++  armedResourceId?: string | null;
++  onPlaceArmedResource?: (lat: number, lng: number) => void;
++  /** True while any Dialog/Sheet is open. Radix dialogs lock body scroll and
++   * compensate for the scrollbar width via padding on <html>/<body>, which
++   * can shift the map container's effective size without the container's
++   * own box dimensions changing — something a ResizeObserver on the
++   * container alone won't always catch. We use this to force a Leaflet
++   * invalidateSize() pass when a modal opens or closes. */
++  modalsOpen?: boolean;
+ }
+ 
+ export const MapContainer: React.FC<MapContainerProps> = ({
+@@ -37,6 +49,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+   drawMode,
+   draftPoints,
+   onMapClickDuringDraw,
++  armedResourceId = null,
++  onPlaceArmedResource,
++  modalsOpen = false,
+ }) => {
+   const mapRef = useRef<L.Map | null>(null);
+   const containerRef = useRef<HTMLDivElement>(null);
+@@ -97,14 +112,19 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+     }
+   }, []);
+ 
+-  // Handle map clicks when in drawing mode
++  // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
++  // placement mode (the mobile fallback for drag-and-drop, which never
++  // fires on touch devices).
+   useEffect(() => {
+     const map = mapRef.current;
+     if (!map) return;
+ 
+     const handleMapClick = (e: L.LeafletMouseEvent) => {
+-      if (drawMode !== 'none' && e.latlng) {
++      if (!e.latlng) return;
++      if (drawMode !== 'none') {
+         onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
++      } else if (armedResourceId && onPlaceArmedResource) {
++        onPlaceArmedResource(e.latlng.lat, e.latlng.lng);
+       }
+     };
+ 
+@@ -112,7 +132,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+     return () => {
+       map.off('click', handleMapClick);
+     };
+-  }, [drawMode, onMapClickDuringDraw]);
++  }, [drawMode, onMapClickDuringDraw, armedResourceId, onPlaceArmedResource]);
+ 
+   // Render Draft Drawing Layer
+   useEffect(() => {
+@@ -315,6 +335,21 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+     });
+   }, [routes, onRouteSelect]);
+ 
++  // Force Leaflet to re-measure its container whenever a modal opens or
++  // closes. Dialogs/Sheets lock body scroll and add scrollbar-compensation
++  // padding, which can silently shift layout without the map container's
++  // own box dimensions changing (so our ResizeObserver won't fire). Left
++  // unhandled, this is a common cause of the map looking "broken"/blank
++  // after closing an Area or Route edit modal.
++  useEffect(() => {
++    const map = mapRef.current;
++    if (!map) return;
++    const raf = requestAnimationFrame(() => {
++      map.invalidateSize();
++    });
++    return () => cancelAnimationFrame(raf);
++  }, [modalsOpen]);
++
+   // Handle selected municipality pan/flyTo
+   useEffect(() => {
+     if (selectedMunicipalityCoord && mapRef.current) {
+@@ -383,15 +418,27 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+     });
+ 
+     markers.forEach((markerData) => {
+-      const existing = leafletMarkersRef.current.get(markerData.id);
+-      const icon = createMarkerIcon(
+-        markerData.resourceTypeId, 
+-        markerData.title, 
+-        markerData.quantity,
+-        effectiveSize
+-      );
++      // Guard against malformed coordinates (e.g. from an old/corrupted
++      // saved plan) before handing them to Leaflet.
++      if (
++        typeof markerData.lat !== 'number' ||
++        typeof markerData.lng !== 'number' ||
++        isNaN(markerData.lat) ||
++        isNaN(markerData.lng)
++      ) {
++        console.error('Skipping marker with invalid coordinates:', markerData);
++        return;
++      }
+ 
+       try {
++        const existing = leafletMarkersRef.current.get(markerData.id);
++        const icon = createMarkerIcon(
++          markerData.resourceTypeId,
++          markerData.title,
++          markerData.quantity,
++          effectiveSize
++        );
++
+         if (existing) {
+           existing.setLatLng([markerData.lat, markerData.lng]);
+           existing.setIcon(icon);
+@@ -413,7 +460,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+           leafletMarkersRef.current.set(markerData.id, leafletMarker);
+         }
+       } catch (err) {
+-        console.error('Error rendering marker:', err);
++        // A single bad marker (e.g. an unrecognized resourceTypeId from an
++        // older saved plan) must never take down the whole map render.
++        console.error('Error rendering marker:', markerData.id, err);
+       }
+     });
+   }, [markers, effectiveSize, onMarkerSelect, onMarkerDragEnd]);
+@@ -455,7 +504,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
+         ref={containerRef}
+         onDragOver={handleDragOver}
+         onDrop={handleDrop}
+-        className={`w-full h-full relative bg-slate-900 ${drawMode !== 'none' ? 'cursor-crosshair' : ''}`}
++        className={`w-full h-full relative bg-slate-900 ${
++          drawMode !== 'none' || armedResourceId ? 'cursor-crosshair' : ''
++        }`}
+       />
+ 
+       {/* Quick Recenter Button */}
+diff --git a/src/components/Navbar.tsx b/src/components/Navbar.tsx
+index 4a031d1..1c2c84e 100644
+--- a/src/components/Navbar.tsx
++++ b/src/components/Navbar.tsx
+@@ -1,7 +1,7 @@
+-import React from 'react';
++import React, { useRef } from 'react';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+-import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
++import { Shield, Save, RotateCcw, Download, Upload, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
+ import { Badge } from '@/components/ui/badge';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ 
+@@ -17,6 +17,7 @@ interface NavbarProps {
+   onSavePlan: () => void;
+   onResetPlan: () => void;
+   onExportJSON: () => void;
++  onImportJSON: (file: File) => void;
+   showHazards: boolean;
+   setShowHazards: (val: boolean) => void;
+   onToggleSummary: () => void;
+@@ -39,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
+   onSavePlan,
+   onResetPlan,
+   onExportJSON,
++  onImportJSON,
+   showHazards,
+   setShowHazards,
+   onToggleSummary,
+@@ -48,6 +50,17 @@ export const Navbar: React.FC<NavbarProps> = ({
+   onStartDrawArea,
+   onStartDrawRoute,
+ }) => {
++  const fileInputRef = useRef<HTMLInputElement>(null);
++
++  const handleImportClick = () => fileInputRef.current?.click();
++
++  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
++    const file = e.target.files?.[0];
++    if (file) onImportJSON(file);
++    // Reset so selecting the same file again still fires onChange
++    e.target.value = '';
++  };
++
+   return (
+     <header className="bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-md z-20">
+       {/* App Brand & Plan Title */}
+@@ -178,6 +191,25 @@ export const Navbar: React.FC<NavbarProps> = ({
+           <span className="hidden md:inline">{showHazards ? 'Hide Hazards' : 'Show Hazards'}</span>
+         </Button>
+ 
++        <input
++          ref={fileInputRef}
++          type="file"
++          accept="application/json,.json"
++          onChange={handleFileChange}
++          className="hidden"
++        />
++
++        <Button
++          variant="outline"
++          size="sm"
++          onClick={handleImportClick}
++          className="h-8 text-xs font-medium gap-1.5 border-slate-700 text-slate-300 hover:text-white bg-slate-800"
++          title="Load a previously exported plan JSON file"
++        >
++          <Upload className="w-3.5 h-3.5 text-slate-300" />
++          <span className="hidden sm:inline">Import</span>
++        </Button>
++
+         <Button
+           variant="outline"
+           size="sm"
+diff --git a/src/components/Sidebar.tsx b/src/components/Sidebar.tsx
+index 10937f0..9e55051 100644
+--- a/src/components/Sidebar.tsx
++++ b/src/components/Sidebar.tsx
+@@ -20,6 +20,9 @@ interface SidebarProps {
+   onSelectRoute?: (route: TacticalRoute) => void;
+   onDeleteArea?: (id: string) => void;
+   onDeleteRoute?: (id: string) => void;
++  /** Currently tap-armed resource id (mobile fallback for drag & drop). */
++  armedResourceId?: string | null;
++  onArmResource?: (resourceId: ResourceDefinition['id']) => void;
+ }
+ 
+ export const Sidebar: React.FC<SidebarProps> = ({ 
+@@ -30,6 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
+   onSelectRoute,
+   onDeleteArea,
+   onDeleteRoute,
++  armedResourceId = null,
++  onArmResource,
+ }) => {
+   const [activeTab, setActiveTab] = useState<string>('vehicles');
+ 
+@@ -122,12 +127,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
+   };
+ 
+   const renderDraggableCard = (item: ResourceDefinition) => {
++    const isArmed = armedResourceId === item.id;
+     return (
+       <div
+         key={item.id}
+         draggable
+         onDragStart={(e) => handleDragStart(e, item.id)}
+-        className="group relative flex items-center space-x-3 p-2.5 bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700/80 rounded-lg cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-slate-500 select-none"
++        onClick={() => onArmResource && onArmResource(item.id)}
++        role="button"
++        tabIndex={0}
++        title="Drag onto the map, or tap to arm for tap-to-place (touch devices)"
++        className={`group relative flex items-center space-x-3 p-2.5 border rounded-lg cursor-grab active:cursor-grabbing transition-all hover:shadow-md select-none ${
++          isArmed
++            ? 'bg-emerald-900/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/60'
++            : 'bg-slate-800/80 hover:bg-slate-700/90 border-slate-700/80 hover:border-slate-500'
++        }`}
+       >
+         <div className="text-slate-500 group-hover:text-slate-300 transition-colors">
+           <GripVertical className="w-4 h-4" />
+@@ -150,6 +164,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
+             {item.description}
+           </p>
+         </div>
++
++        {isArmed && (
++          <Badge className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[9px] px-1.5 py-0 border border-emerald-400 shadow">
++            Armed
++          </Badge>
++        )}
+       </div>
+     );
+   };
+@@ -160,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
+       <div className="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-300 flex items-start space-x-2">
+         <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+         <span>
+-          <strong>Drag assets</strong> onto the map, or use top controls to draw <strong>Area Divisions</strong> and <strong>Rerouting Lines</strong>.
++          <strong>Drag assets</strong> onto the map (or <strong>tap a card</strong> then tap the map on touch devices), or use top controls to draw <strong>Area Divisions</strong> and <strong>Rerouting Lines</strong>.
+         </span>
+       </div>
+ 
+diff --git a/src/components/ui/command.tsx b/src/components/ui/command.tsx
+index 0341e97..445e6a9 100644
+--- a/src/components/ui/command.tsx
++++ b/src/components/ui/command.tsx
+@@ -21,7 +21,7 @@ const Command = React.forwardRef<
+ ));
+ Command.displayName = CommandPrimitive.displayName;
+ 
+-interface CommandDialogProps extends DialogProps {}
++type CommandDialogProps = DialogProps;
+ 
+ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+   return (
+diff --git a/src/components/ui/textarea.tsx b/src/components/ui/textarea.tsx
+index d513f35..7de5c4a 100644
+--- a/src/components/ui/textarea.tsx
++++ b/src/components/ui/textarea.tsx
+@@ -2,7 +2,7 @@ import * as React from "react";
+ 
+ import { cn } from "@/lib/utils";
+ 
+-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
++export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+ 
+ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+   ({ className, ...props }, ref) => {
+diff --git a/src/lib/utils.ts b/src/lib/utils.ts
+index a5ef193..43f0580 100644
+--- a/src/lib/utils.ts
++++ b/src/lib/utils.ts
+@@ -4,3 +4,34 @@ import { twMerge } from "tailwind-merge";
+ export function cn(...inputs: ClassValue[]) {
+   return twMerge(clsx(inputs));
+ }
++
++/**
++ * Great-circle distance between two lat/lng points, in kilometers.
++ *
++ * Plain Math.hypot(latDiff, lngDiff) treats degrees of latitude and
++ * longitude as equivalent distances, which is off by ~3% at Camarines
++ * Norte's latitude (~14°N) and gets worse further from the equator or
++ * across larger spans — enough to misassign a marker's nearest
++ * municipality near a boundary. Haversine accounts for the Earth's
++ * curvature and gives an accurate result regardless of latitude.
++ */
++export function haversineDistanceKm(
++  lat1: number,
++  lng1: number,
++  lat2: number,
++  lng2: number
++): number {
++  const R = 6371; // Earth radius in km
++  const toRad = (deg: number) => (deg * Math.PI) / 180;
++
++  const dLat = toRad(lat2 - lat1);
++  const dLng = toRad(lng2 - lng1);
++
++  const a =
++    Math.sin(dLat / 2) ** 2 +
++    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
++
++  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
++
++  return R * c;
++}
+diff --git a/src/pages/Index.tsx b/src/pages/Index.tsx
+index 34eaa91..e561163 100644
+--- a/src/pages/Index.tsx
++++ b/src/pages/Index.tsx
+@@ -1,14 +1,22 @@
+-import React, { useState, useEffect, useCallback } from 'react';
++import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+ import { Navbar } from '@/components/Navbar';
+ import { Sidebar } from '@/components/Sidebar';
+-import { MapContainer } from '@/components/MapContainer';
+ import { MarkerEditModal } from '@/components/MarkerEditModal';
+ import { AreaEditModal } from '@/components/AreaEditModal';
+ import { RouteEditModal } from '@/components/RouteEditModal';
+ import { PlanSummaryDrawer } from '@/components/PlanSummaryDrawer';
++
++// Leaflet (~150KB) and its React wrapper logic only need to load once the
++// user is actually looking at the map — lazy-loading it out of the main
++// bundle is the single biggest win against the "chunk too large" build
++// warning, since nothing else in the app depends on it.
++const MapContainer = lazy(() =>
++  import('@/components/MapContainer').then((m) => ({ default: m.MapContainer }))
++);
+ import { PrepositionedMarker, ResourceTypeId, PrepositionPlan, OperationalArea, TacticalRoute } from '@/types/disaster';
+-import { RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
++import { RESOURCE_CATALOG, MUNICIPALITIES, INITIAL_MARKERS } from '@/data/camarinesNorteData';
+ import { showSuccess, showError } from '@/utils/toast';
++import { haversineDistanceKm } from '@/lib/utils';
+ import { Button } from '@/components/ui/button';
+ import { Check, X, RotateCcw } from 'lucide-react';
+ 
+@@ -34,12 +42,18 @@ const Index = () => {
+   const [drawMode, setDrawMode] = useState<'none' | 'area' | 'route'>('none');
+   const [draftPoints, setDraftPoints] = useState<[number, number][]>([]);
+ 
++  // Tap-to-place mode — fallback for touch devices, where HTML5
++  // drag-and-drop (used for desktop placement) does not fire at all.
++  const [armedResourceId, setArmedResourceId] = useState<ResourceTypeId | null>(null);
++
+   // Map settings
+   const [showHazards, setShowHazards] = useState<boolean>(false);
+   const [selectedMunicipalityCoord, setSelectedMunicipalityCoord] = useState<[number, number] | null>(null);
+   const [iconSize, setIconSize] = useState<number>(40);
+ 
+-  // Load plan from localStorage if previously saved
++  // Load plan from localStorage if previously saved; otherwise seed the map
++  // with sample markers so a first-time user sees a working example instead
++  // of a completely blank canvas.
+   useEffect(() => {
+     try {
+       const savedData = localStorage.getItem(STORAGE_KEY);
+@@ -49,6 +63,8 @@ const Index = () => {
+         if (parsed.markers) setMarkers(parsed.markers);
+         if (parsed.areas) setAreas(parsed.areas);
+         if (parsed.routes) setRoutes(parsed.routes);
++      } else {
++        setMarkers(INITIAL_MARKERS);
+       }
+     } catch (e) {
+       console.error('Failed to parse saved plan:', e);
+@@ -73,7 +89,7 @@ const Index = () => {
+     let minDistance = Number.MAX_VALUE;
+ 
+     MUNICIPALITIES.forEach((mun) => {
+-      const dist = Math.hypot(mun.lat - lat, mun.lng - lng);
++      const dist = haversineDistanceKm(mun.lat, mun.lng, lat, lng);
+       if (dist < minDistance) {
+         minDistance = dist;
+         closestTown = mun.name;
+@@ -107,15 +123,52 @@ const Index = () => {
+     showSuccess('Marker position updated.');
+   }, []);
+ 
++  // Arm/disarm a resource for tap-to-place (mobile fallback for drag/drop)
++  const handleArmResource = useCallback((resourceTypeId: ResourceTypeId) => {
++    setArmedResourceId((prev) => (prev === resourceTypeId ? null : resourceTypeId));
++    // Placement and area/route drawing are mutually exclusive modes.
++    setDrawMode('none');
++    setDraftPoints([]);
++  }, []);
++
++  // Place the armed resource at a tapped map location. Stays armed
++  // afterward so multiple units of the same type can be placed quickly,
++  // matching how repeated drag-and-drop placement works on desktop.
++  const handlePlaceArmedResource = useCallback(
++    (lat: number, lng: number) => {
++      if (!armedResourceId) return;
++      handleAddMarker(armedResourceId, lat, lng);
++    },
++    [armedResourceId]
++  );
++
+   // Handle Map Drawing Clicks
+   const handleMapClickDuringDraw = useCallback((lat: number, lng: number) => {
+-    setDraftPoints((prev) => [...prev, [lat, lng]]);
++    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return;
++
++    setDraftPoints((prev) => {
++      // Reject a click that lands on (effectively) the same spot as the
++      // last point. Duplicate/near-duplicate consecutive points create
++      // zero-length polygon/polyline segments, which is a documented
++      // source of Leaflet renderer errors during subsequent pan/zoom —
++      // errors that happen inside Leaflet's own event loop, outside React,
++      // and can leave the map visually broken until a full page reload.
++      const last = prev[prev.length - 1];
++      if (last && Math.hypot(last[0] - lat, last[1] - lng) < 1e-6) {
++        return prev;
++      }
++      return [...prev, [lat, lng]];
++    });
+   }, []);
+ 
+   // Finish Area Drawing
+   const handleFinishDrawArea = () => {
+-    if (draftPoints.length < 3) {
+-      showError('An area division requires at least 3 points on the map.');
++    const validPoints = draftPoints.filter(
++      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
++    );
++
++    if (validPoints.length < 3) {
++      showError('An area division requires at least 3 valid points on the map.');
+       return;
+     }
+ 
+@@ -124,7 +177,7 @@ const Index = () => {
+       name: `Division ${String.fromCharCode(65 + areas.length)}`,
+       color: '#3b82f6',
+       opacity: 0.3,
+-      points: draftPoints,
++      points: validPoints,
+       notes: 'Operational Area Division',
+       updatedAt: new Date().toISOString(),
+     };
+@@ -137,8 +190,12 @@ const Index = () => {
+ 
+   // Finish Route Drawing
+   const handleFinishDrawRoute = () => {
+-    if (draftPoints.length < 2) {
+-      showError('A route requires at least 2 points on the map.');
++    const validPoints = draftPoints.filter(
++      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
++    );
++
++    if (validPoints.length < 2) {
++      showError('A route requires at least 2 valid points on the map.');
+       return;
+     }
+ 
+@@ -148,7 +205,7 @@ const Index = () => {
+       type: 'evacuation',
+       color: '#10b981',
+       isDashed: false,
+-      points: draftPoints,
++      points: validPoints,
+       notes: 'Primary Traffic Flow Corridor',
+       updatedAt: new Date().toISOString(),
+     };
+@@ -229,6 +286,70 @@ const Index = () => {
+     }
+   };
+ 
++  // Import JSON — restores a previously exported plan. Basic runtime
++  // validation is applied since imported data bypasses TypeScript entirely
++  // (a malformed file must never be able to crash the map render).
++  const handleImportJSON = (file: File) => {
++    const reader = new FileReader();
++    reader.onload = (e) => {
++      try {
++        const text = e.target?.result;
++        if (typeof text !== 'string') throw new Error('Could not read file contents.');
++        const parsed = JSON.parse(text);
++
++        if (typeof parsed !== 'object' || parsed === null) {
++          throw new Error('File does not contain a valid plan object.');
++        }
++
++        const importedMarkers: PrepositionedMarker[] = Array.isArray(parsed.markers)
++          ? parsed.markers.filter(
++              (m: unknown): m is PrepositionedMarker =>
++                !!m &&
++                typeof m === 'object' &&
++                typeof (m as PrepositionedMarker).lat === 'number' &&
++                typeof (m as PrepositionedMarker).lng === 'number' &&
++                !isNaN((m as PrepositionedMarker).lat) &&
++                !isNaN((m as PrepositionedMarker).lng) &&
++                typeof (m as PrepositionedMarker).resourceTypeId === 'string'
++            )
++          : [];
++
++        const importedAreas: OperationalArea[] = Array.isArray(parsed.areas)
++          ? parsed.areas.filter(
++              (a: unknown): a is OperationalArea =>
++                !!a && typeof a === 'object' && Array.isArray((a as OperationalArea).points) && (a as OperationalArea).points.length >= 3
++            )
++          : [];
++
++        const importedRoutes: TacticalRoute[] = Array.isArray(parsed.routes)
++          ? parsed.routes.filter(
++              (r: unknown): r is TacticalRoute =>
++                !!r && typeof r === 'object' && Array.isArray((r as TacticalRoute).points) && (r as TacticalRoute).points.length >= 2
++            )
++          : [];
++
++        if (importedMarkers.length === 0 && importedAreas.length === 0 && importedRoutes.length === 0) {
++          showError('No valid markers, areas, or routes found in that file.');
++          return;
++        }
++
++        setPlanTitle(typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title : 'Imported Plan');
++        setMarkers(importedMarkers);
++        setAreas(importedAreas);
++        setRoutes(importedRoutes);
++
++        showSuccess(
++          `Imported ${importedMarkers.length} markers, ${importedAreas.length} areas, and ${importedRoutes.length} routes.`
++        );
++      } catch (err) {
++        console.error('Failed to import plan:', err);
++        showError('Could not import that file — it does not look like a valid plan export.');
++      }
++    };
++    reader.onerror = () => showError('Failed to read the selected file.');
++    reader.readAsText(file);
++  };
++
+   // Export JSON
+   const handleExportJSON = () => {
+     const plan: PrepositionPlan = {
+@@ -285,6 +406,7 @@ const Index = () => {
+         onSavePlan={handleSavePlan}
+         onResetPlan={handleResetPlan}
+         onExportJSON={handleExportJSON}
++        onImportJSON={handleImportJSON}
+         showHazards={showHazards}
+         setShowHazards={setShowHazards}
+         onToggleSummary={() => setIsSummaryOpen(true)}
+@@ -294,10 +416,12 @@ const Index = () => {
+         onStartDrawArea={() => {
+           setDrawMode((prev) => (prev === 'area' ? 'none' : 'area'));
+           setDraftPoints([]);
++          setArmedResourceId(null);
+         }}
+         onStartDrawRoute={() => {
+           setDrawMode((prev) => (prev === 'route' ? 'none' : 'route'));
+           setDraftPoints([]);
++          setArmedResourceId(null);
+         }}
+       />
+ 
+@@ -311,9 +435,11 @@ const Index = () => {
+           onSelectRoute={handleSelectRouteFromList}
+           onDeleteArea={handleDeleteArea}
+           onDeleteRoute={handleDeleteRoute}
++          armedResourceId={armedResourceId}
++          onArmResource={handleArmResource}
+         />
+ 
+-        <main className="flex-1 h-full relative">
++        <main className="flex-1 h-full min-h-0 relative">
+           {/* Floating Drawing Control Overlay */}
+           {drawMode !== 'none' && (
+             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
+@@ -359,31 +485,62 @@ const Index = () => {
+             </div>
+           )}
+ 
+-          <MapContainer
+-            markers={markers}
+-            areas={areas}
+-            routes={routes}
+-            onAddMarker={handleAddMarker}
+-            onMarkerSelect={(m) => {
+-              setSelectedMarker(m);
+-              setIsMarkerModalOpen(true);
+-            }}
+-            onMarkerDragEnd={handleMarkerDragEnd}
+-            onAreaSelect={(a) => {
+-              setSelectedArea(a);
+-              setIsAreaModalOpen(true);
+-            }}
+-            onRouteSelect={(r) => {
+-              setSelectedRoute(r);
+-              setIsRouteModalOpen(true);
+-            }}
+-            showHazards={showHazards}
+-            selectedMunicipalityCoord={selectedMunicipalityCoord}
+-            baseIconSize={iconSize}
+-            drawMode={drawMode}
+-            draftPoints={draftPoints}
+-            onMapClickDuringDraw={handleMapClickDuringDraw}
+-          />
++          {/* Floating Tap-to-Place Overlay (mobile fallback for drag & drop) */}
++          {armedResourceId && (
++            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
++              <div className="text-xs">
++                <span className="font-bold text-emerald-400 block uppercase">
++                  {RESOURCE_CATALOG.find((r) => r.id === armedResourceId)?.name || 'Resource'} Armed
++                </span>
++                <span className="text-[11px] text-slate-300">Tap the map to place. Tap again to place another.</span>
++              </div>
++              <Button
++                size="sm"
++                variant="ghost"
++                onClick={() => setArmedResourceId(null)}
++                className="text-slate-400 hover:text-white h-7 text-xs p-1 border-l border-slate-800 pl-3"
++              >
++                <X className="w-4 h-4" />
++              </Button>
++            </div>
++          )}
++
++          <Suspense
++            fallback={
++              <div className="w-full h-full flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
++                Loading map…
++              </div>
++            }
++          >
++            <MapContainer
++              markers={markers}
++              areas={areas}
++              routes={routes}
++              onAddMarker={handleAddMarker}
++              armedResourceId={armedResourceId}
++              onPlaceArmedResource={handlePlaceArmedResource}
++              onMarkerSelect={(m) => {
++                setSelectedMarker(m);
++                setIsMarkerModalOpen(true);
++              }}
++              onMarkerDragEnd={handleMarkerDragEnd}
++              onAreaSelect={(a) => {
++                setSelectedArea(a);
++                setIsAreaModalOpen(true);
++              }}
++              onRouteSelect={(r) => {
++                setSelectedRoute(r);
++                setIsRouteModalOpen(true);
++              }}
++              showHazards={showHazards}
++              selectedMunicipalityCoord={selectedMunicipalityCoord}
++              baseIconSize={iconSize}
++              drawMode={drawMode}
++              draftPoints={draftPoints}
++              onMapClickDuringDraw={handleMapClickDuringDraw}
++              modalsOpen={isMarkerModalOpen || isAreaModalOpen || isRouteModalOpen || isSummaryOpen}
++            />
++          </Suspense>
+         </main>
+       </div>
+ 
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index b13b7f3..e1a10c9 100644
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -1,4 +1,5 @@
+ import type { Config } from "tailwindcss";
++import tailwindcssAnimate from "tailwindcss-animate";
+ 
+ export default {
+   darkMode: ["class"],
+@@ -92,5 +93,5 @@ export default {
+       },
+     },
+   },
+-  plugins: [require("tailwindcss-animate")],
++  plugins: [tailwindcssAnimate],
+ } satisfies Config;
+diff --git a/vite.config.ts b/vite.config.ts
+index 923dca2..a0024d6 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -14,4 +14,14 @@ export default defineConfig(() => ({
+       "@": path.resolve(__dirname, "./src"),
+     },
+   },
++  build: {
++    rollupOptions: {
++      output: {
++        manualChunks(id: string) {
++          if (id.includes("node_modules/leaflet")) return "leaflet";
++          if (id.includes("node_modules/@radix-ui")) return "radix-vendor";
++        },
++      },
++    },
++  },
+ }));
+-- 
+2.43.0
+

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Save, RotateCcw, Download, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
+import { Shield, Save, RotateCcw, Download, Upload, Layers, MapPin, Truck, AlertTriangle, ZoomIn, Navigation, Spline } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -17,6 +17,7 @@ interface NavbarProps {
   onSavePlan: () => void;
   onResetPlan: () => void;
   onExportJSON: () => void;
+  onImportJSON: (file: File) => void;
   showHazards: boolean;
   setShowHazards: (val: boolean) => void;
   onToggleSummary: () => void;
@@ -39,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSavePlan,
   onResetPlan,
   onExportJSON,
+  onImportJSON,
   showHazards,
   setShowHazards,
   onToggleSummary,
@@ -48,6 +50,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   onStartDrawArea,
   onStartDrawRoute,
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onImportJSON(file);
+    // Reset so selecting the same file again still fires onChange
+    e.target.value = '';
+  };
+
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-md z-20">
       {/* App Brand & Plan Title */}
@@ -176,6 +189,25 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           <span className="hidden md:inline">{showHazards ? 'Hide Hazards' : 'Show Hazards'}</span>
+        </Button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleImportClick}
+          className="h-8 text-xs font-medium gap-1.5 border-slate-700 text-slate-300 hover:text-white bg-slate-800"
+          title="Load a previously exported plan JSON file"
+        >
+          <Upload className="w-3.5 h-3.5 text-slate-300" />
+          <span className="hidden sm:inline">Import</span>
         </Button>
 
         <Button

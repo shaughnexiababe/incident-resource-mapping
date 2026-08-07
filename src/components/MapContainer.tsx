@@ -20,6 +20,18 @@ interface MapContainerProps {
   drawMode: 'none' | 'area' | 'route';
   draftPoints: [number, number][];
   onMapClickDuringDraw: (lat: number, lng: number) => void;
+  /** Resource id currently "armed" for tap-to-place, or null. This is the
+   * touch-device fallback for drag-and-drop placement, which never fires
+   * on mobile/tablet browsers. */
+  armedResourceId?: string | null;
+  onPlaceArmedResource?: (lat: number, lng: number) => void;
+  /** True while any Dialog/Sheet is open. Radix dialogs lock body scroll and
+   * compensate for the scrollbar width via padding on <html>/<body>, which
+   * can shift the map container's effective size without the container's
+   * own box dimensions changing — something a ResizeObserver on the
+   * container alone won't always catch. We use this to force a Leaflet
+   * invalidateSize() pass when a modal opens or closes. */
+  modalsOpen?: boolean;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -37,6 +49,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   drawMode,
   draftPoints,
   onMapClickDuringDraw,
+  armedResourceId = null,
+  onPlaceArmedResource,
+  modalsOpen = false,
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,14 +112,19 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, []);
 
-  // Handle map clicks when in drawing mode
+  // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
+  // placement mode (the mobile fallback for drag-and-drop, which never
+  // fires on touch devices).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const handleMapClick = (e: L.LeafletMouseEvent) => {
-      if (drawMode !== 'none' && e.latlng) {
+      if (!e.latlng) return;
+      if (drawMode !== 'none') {
         onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
+      } else if (armedResourceId && onPlaceArmedResource) {
+        onPlaceArmedResource(e.latlng.lat, e.latlng.lng);
       }
     };
 
@@ -112,7 +132,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     return () => {
       map.off('click', handleMapClick);
     };
-  }, [drawMode, onMapClickDuringDraw]);
+  }, [drawMode, onMapClickDuringDraw, armedResourceId, onPlaceArmedResource]);
 
   // Render Draft Drawing Layer
   useEffect(() => {
@@ -315,6 +335,21 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
   }, [routes, onRouteSelect]);
 
+  // Force Leaflet to re-measure its container whenever a modal opens or
+  // closes. Dialogs/Sheets lock body scroll and add scrollbar-compensation
+  // padding, which can silently shift layout without the map container's
+  // own box dimensions changing (so our ResizeObserver won't fire). Left
+  // unhandled, this is a common cause of the map looking "broken"/blank
+  // after closing an Area or Route edit modal.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const raf = requestAnimationFrame(() => {
+      map.invalidateSize();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [modalsOpen]);
+
   // Handle selected municipality pan/flyTo
   useEffect(() => {
     if (selectedMunicipalityCoord && mapRef.current) {
@@ -383,15 +418,27 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
 
     markers.forEach((markerData) => {
-      const existing = leafletMarkersRef.current.get(markerData.id);
-      const icon = createMarkerIcon(
-        markerData.resourceTypeId, 
-        markerData.title, 
-        markerData.quantity,
-        effectiveSize
-      );
+      // Guard against malformed coordinates (e.g. from an old/corrupted
+      // saved plan) before handing them to Leaflet.
+      if (
+        typeof markerData.lat !== 'number' ||
+        typeof markerData.lng !== 'number' ||
+        isNaN(markerData.lat) ||
+        isNaN(markerData.lng)
+      ) {
+        console.error('Skipping marker with invalid coordinates:', markerData);
+        return;
+      }
 
       try {
+        const existing = leafletMarkersRef.current.get(markerData.id);
+        const icon = createMarkerIcon(
+          markerData.resourceTypeId,
+          markerData.title,
+          markerData.quantity,
+          effectiveSize
+        );
+
         if (existing) {
           existing.setLatLng([markerData.lat, markerData.lng]);
           existing.setIcon(icon);
@@ -413,7 +460,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           leafletMarkersRef.current.set(markerData.id, leafletMarker);
         }
       } catch (err) {
-        console.error('Error rendering marker:', err);
+        // A single bad marker (e.g. an unrecognized resourceTypeId from an
+        // older saved plan) must never take down the whole map render.
+        console.error('Error rendering marker:', markerData.id, err);
       }
     });
   }, [markers, effectiveSize, onMarkerSelect, onMarkerDragEnd]);
@@ -455,7 +504,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`w-full h-full relative bg-slate-900 ${drawMode !== 'none' ? 'cursor-crosshair' : ''}`}
+        className={`w-full h-full relative bg-slate-900 ${
+          drawMode !== 'none' || armedResourceId ? 'cursor-crosshair' : ''
+        }`}
       />
 
       {/* Quick Recenter Button */}

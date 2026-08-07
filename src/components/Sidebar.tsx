@@ -20,6 +20,9 @@ interface SidebarProps {
   onSelectRoute?: (route: TacticalRoute) => void;
   onDeleteArea?: (id: string) => void;
   onDeleteRoute?: (id: string) => void;
+  /** Currently tap-armed resource id (mobile fallback for drag & drop). */
+  armedResourceId?: string | null;
+  onArmResource?: (resourceId: ResourceDefinition['id']) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -30,6 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectRoute,
   onDeleteArea,
   onDeleteRoute,
+  armedResourceId = null,
+  onArmResource,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('vehicles');
 
@@ -122,12 +127,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const renderDraggableCard = (item: ResourceDefinition) => {
+    const isArmed = armedResourceId === item.id;
     return (
       <div
         key={item.id}
         draggable
         onDragStart={(e) => handleDragStart(e, item.id)}
-        className="group relative flex items-center space-x-3 p-2.5 bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700/80 rounded-lg cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-slate-500 select-none"
+        onClick={() => onArmResource && onArmResource(item.id)}
+        role="button"
+        tabIndex={0}
+        title="Drag onto the map, or tap to arm for tap-to-place (touch devices)"
+        className={`group relative flex items-center space-x-3 p-2.5 border rounded-lg cursor-grab active:cursor-grabbing transition-all hover:shadow-md select-none ${
+          isArmed
+            ? 'bg-emerald-900/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/60'
+            : 'bg-slate-800/80 hover:bg-slate-700/90 border-slate-700/80 hover:border-slate-500'
+        }`}
       >
         <div className="text-slate-500 group-hover:text-slate-300 transition-colors">
           <GripVertical className="w-4 h-4" />
@@ -150,6 +164,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {item.description}
           </p>
         </div>
+
+        {isArmed && (
+          <Badge className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[9px] px-1.5 py-0 border border-emerald-400 shadow">
+            Armed
+          </Badge>
+        )}
       </div>
     );
   };
@@ -160,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-300 flex items-start space-x-2">
         <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
         <span>
-          <strong>Drag assets</strong> onto the map, or use top controls to draw <strong>Area Divisions</strong> and <strong>Rerouting Lines</strong>.
+          <strong>Drag assets</strong> onto the map (or <strong>tap a card</strong> then tap the map on touch devices), or use top controls to draw <strong>Area Divisions</strong> and <strong>Rerouting Lines</strong>.
         </span>
       </div>
 

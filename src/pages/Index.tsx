@@ -1,14 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
-import { MapContainer } from '@/components/MapContainer';
 import { MarkerEditModal } from '@/components/MarkerEditModal';
 import { AreaEditModal } from '@/components/AreaEditModal';
 import { RouteEditModal } from '@/components/RouteEditModal';
 import { PlanSummaryDrawer } from '@/components/PlanSummaryDrawer';
+
+// Leaflet (~150KB) and its React wrapper logic only need to load once the
+// user is actually looking at the map — lazy-loading it out of the main
+// bundle is the single biggest win against the "chunk too large" build
+// warning, since nothing else in the app depends on it.
+const MapContainer = lazy(() =>
+  import('@/components/MapContainer').then((m) => ({ default: m.MapContainer }))
+);
 import { PrepositionedMarker, ResourceTypeId, PrepositionPlan, OperationalArea, TacticalRoute } from '@/types/disaster';
-import { RESOURCE_CATALOG, MUNICIPALITIES } from '@/data/camarinesNorteData';
+import { RESOURCE_CATALOG, MUNICIPALITIES, INITIAL_MARKERS } from '@/data/camarinesNorteData';
 import { showSuccess, showError } from '@/utils/toast';
+import { haversineDistanceKm } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Check, X, RotateCcw } from 'lucide-react';
 
@@ -34,12 +42,18 @@ const Index = () => {
   const [drawMode, setDrawMode] = useState<'none' | 'area' | 'route'>('none');
   const [draftPoints, setDraftPoints] = useState<[number, number][]>([]);
 
+  // Tap-to-place mode — fallback for touch devices, where HTML5
+  // drag-and-drop (used for desktop placement) does not fire at all.
+  const [armedResourceId, setArmedResourceId] = useState<ResourceTypeId | null>(null);
+
   // Map settings
   const [showHazards, setShowHazards] = useState<boolean>(false);
   const [selectedMunicipalityCoord, setSelectedMunicipalityCoord] = useState<[number, number] | null>(null);
   const [iconSize, setIconSize] = useState<number>(40);
 
-  // Load plan from localStorage if previously saved
+  // Load plan from localStorage if previously saved; otherwise seed the map
+  // with sample markers so a first-time user sees a working example instead
+  // of a completely blank canvas.
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
@@ -49,6 +63,8 @@ const Index = () => {
         if (parsed.markers) setMarkers(parsed.markers);
         if (parsed.areas) setAreas(parsed.areas);
         if (parsed.routes) setRoutes(parsed.routes);
+      } else {
+        setMarkers(INITIAL_MARKERS);
       }
     } catch (e) {
       console.error('Failed to parse saved plan:', e);
@@ -73,7 +89,7 @@ const Index = () => {
     let minDistance = Number.MAX_VALUE;
 
     MUNICIPALITIES.forEach((mun) => {
-      const dist = Math.hypot(mun.lat - lat, mun.lng - lng);
+      const dist = haversineDistanceKm(mun.lat, mun.lng, lat, lng);
       if (dist < minDistance) {
         minDistance = dist;
         closestTown = mun.name;
@@ -107,15 +123,52 @@ const Index = () => {
     showSuccess('Marker position updated.');
   }, []);
 
+  // Arm/disarm a resource for tap-to-place (mobile fallback for drag/drop)
+  const handleArmResource = useCallback((resourceTypeId: ResourceTypeId) => {
+    setArmedResourceId((prev) => (prev === resourceTypeId ? null : resourceTypeId));
+    // Placement and area/route drawing are mutually exclusive modes.
+    setDrawMode('none');
+    setDraftPoints([]);
+  }, []);
+
+  // Place the armed resource at a tapped map location. Stays armed
+  // afterward so multiple units of the same type can be placed quickly,
+  // matching how repeated drag-and-drop placement works on desktop.
+  const handlePlaceArmedResource = useCallback(
+    (lat: number, lng: number) => {
+      if (!armedResourceId) return;
+      handleAddMarker(armedResourceId, lat, lng);
+    },
+    [armedResourceId]
+  );
+
   // Handle Map Drawing Clicks
   const handleMapClickDuringDraw = useCallback((lat: number, lng: number) => {
-    setDraftPoints((prev) => [...prev, [lat, lng]]);
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return;
+
+    setDraftPoints((prev) => {
+      // Reject a click that lands on (effectively) the same spot as the
+      // last point. Duplicate/near-duplicate consecutive points create
+      // zero-length polygon/polyline segments, which is a documented
+      // source of Leaflet renderer errors during subsequent pan/zoom —
+      // errors that happen inside Leaflet's own event loop, outside React,
+      // and can leave the map visually broken until a full page reload.
+      const last = prev[prev.length - 1];
+      if (last && Math.hypot(last[0] - lat, last[1] - lng) < 1e-6) {
+        return prev;
+      }
+      return [...prev, [lat, lng]];
+    });
   }, []);
 
   // Finish Area Drawing
   const handleFinishDrawArea = () => {
-    if (draftPoints.length < 3) {
-      showError('An area division requires at least 3 points on the map.');
+    const validPoints = draftPoints.filter(
+      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+    );
+
+    if (validPoints.length < 3) {
+      showError('An area division requires at least 3 valid points on the map.');
       return;
     }
 
@@ -124,7 +177,7 @@ const Index = () => {
       name: `Division ${String.fromCharCode(65 + areas.length)}`,
       color: '#3b82f6',
       opacity: 0.3,
-      points: draftPoints,
+      points: validPoints,
       notes: 'Operational Area Division',
       updatedAt: new Date().toISOString(),
     };
@@ -137,8 +190,12 @@ const Index = () => {
 
   // Finish Route Drawing
   const handleFinishDrawRoute = () => {
-    if (draftPoints.length < 2) {
-      showError('A route requires at least 2 points on the map.');
+    const validPoints = draftPoints.filter(
+      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+    );
+
+    if (validPoints.length < 2) {
+      showError('A route requires at least 2 valid points on the map.');
       return;
     }
 
@@ -148,7 +205,7 @@ const Index = () => {
       type: 'evacuation',
       color: '#10b981',
       isDashed: false,
-      points: draftPoints,
+      points: validPoints,
       notes: 'Primary Traffic Flow Corridor',
       updatedAt: new Date().toISOString(),
     };
@@ -229,6 +286,70 @@ const Index = () => {
     }
   };
 
+  // Import JSON — restores a previously exported plan. Basic runtime
+  // validation is applied since imported data bypasses TypeScript entirely
+  // (a malformed file must never be able to crash the map render).
+  const handleImportJSON = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') throw new Error('Could not read file contents.');
+        const parsed = JSON.parse(text);
+
+        if (typeof parsed !== 'object' || parsed === null) {
+          throw new Error('File does not contain a valid plan object.');
+        }
+
+        const importedMarkers: PrepositionedMarker[] = Array.isArray(parsed.markers)
+          ? parsed.markers.filter(
+              (m: unknown): m is PrepositionedMarker =>
+                !!m &&
+                typeof m === 'object' &&
+                typeof (m as PrepositionedMarker).lat === 'number' &&
+                typeof (m as PrepositionedMarker).lng === 'number' &&
+                !isNaN((m as PrepositionedMarker).lat) &&
+                !isNaN((m as PrepositionedMarker).lng) &&
+                typeof (m as PrepositionedMarker).resourceTypeId === 'string'
+            )
+          : [];
+
+        const importedAreas: OperationalArea[] = Array.isArray(parsed.areas)
+          ? parsed.areas.filter(
+              (a: unknown): a is OperationalArea =>
+                !!a && typeof a === 'object' && Array.isArray((a as OperationalArea).points) && (a as OperationalArea).points.length >= 3
+            )
+          : [];
+
+        const importedRoutes: TacticalRoute[] = Array.isArray(parsed.routes)
+          ? parsed.routes.filter(
+              (r: unknown): r is TacticalRoute =>
+                !!r && typeof r === 'object' && Array.isArray((r as TacticalRoute).points) && (r as TacticalRoute).points.length >= 2
+            )
+          : [];
+
+        if (importedMarkers.length === 0 && importedAreas.length === 0 && importedRoutes.length === 0) {
+          showError('No valid markers, areas, or routes found in that file.');
+          return;
+        }
+
+        setPlanTitle(typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title : 'Imported Plan');
+        setMarkers(importedMarkers);
+        setAreas(importedAreas);
+        setRoutes(importedRoutes);
+
+        showSuccess(
+          `Imported ${importedMarkers.length} markers, ${importedAreas.length} areas, and ${importedRoutes.length} routes.`
+        );
+      } catch (err) {
+        console.error('Failed to import plan:', err);
+        showError('Could not import that file — it does not look like a valid plan export.');
+      }
+    };
+    reader.onerror = () => showError('Failed to read the selected file.');
+    reader.readAsText(file);
+  };
+
   // Export JSON
   const handleExportJSON = () => {
     const plan: PrepositionPlan = {
@@ -285,6 +406,7 @@ const Index = () => {
         onSavePlan={handleSavePlan}
         onResetPlan={handleResetPlan}
         onExportJSON={handleExportJSON}
+        onImportJSON={handleImportJSON}
         showHazards={showHazards}
         setShowHazards={setShowHazards}
         onToggleSummary={() => setIsSummaryOpen(true)}
@@ -294,10 +416,12 @@ const Index = () => {
         onStartDrawArea={() => {
           setDrawMode((prev) => (prev === 'area' ? 'none' : 'area'));
           setDraftPoints([]);
+          setArmedResourceId(null);
         }}
         onStartDrawRoute={() => {
           setDrawMode((prev) => (prev === 'route' ? 'none' : 'route'));
           setDraftPoints([]);
+          setArmedResourceId(null);
         }}
       />
 
@@ -311,9 +435,11 @@ const Index = () => {
           onSelectRoute={handleSelectRouteFromList}
           onDeleteArea={handleDeleteArea}
           onDeleteRoute={handleDeleteRoute}
+          armedResourceId={armedResourceId}
+          onArmResource={handleArmResource}
         />
 
-        <main className="flex-1 h-full relative">
+        <main className="flex-1 h-full min-h-0 relative">
           {/* Floating Drawing Control Overlay */}
           {drawMode !== 'none' && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
@@ -359,31 +485,62 @@ const Index = () => {
             </div>
           )}
 
-          <MapContainer
-            markers={markers}
-            areas={areas}
-            routes={routes}
-            onAddMarker={handleAddMarker}
-            onMarkerSelect={(m) => {
-              setSelectedMarker(m);
-              setIsMarkerModalOpen(true);
-            }}
-            onMarkerDragEnd={handleMarkerDragEnd}
-            onAreaSelect={(a) => {
-              setSelectedArea(a);
-              setIsAreaModalOpen(true);
-            }}
-            onRouteSelect={(r) => {
-              setSelectedRoute(r);
-              setIsRouteModalOpen(true);
-            }}
-            showHazards={showHazards}
-            selectedMunicipalityCoord={selectedMunicipalityCoord}
-            baseIconSize={iconSize}
-            drawMode={drawMode}
-            draftPoints={draftPoints}
-            onMapClickDuringDraw={handleMapClickDuringDraw}
-          />
+          {/* Floating Tap-to-Place Overlay (mobile fallback for drag & drop) */}
+          {armedResourceId && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
+              <div className="text-xs">
+                <span className="font-bold text-emerald-400 block uppercase">
+                  {RESOURCE_CATALOG.find((r) => r.id === armedResourceId)?.name || 'Resource'} Armed
+                </span>
+                <span className="text-[11px] text-slate-300">Tap the map to place. Tap again to place another.</span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setArmedResourceId(null)}
+                className="text-slate-400 hover:text-white h-7 text-xs p-1 border-l border-slate-800 pl-3"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
+          <Suspense
+            fallback={
+              <div className="w-full h-full flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
+                Loading map…
+              </div>
+            }
+          >
+            <MapContainer
+              markers={markers}
+              areas={areas}
+              routes={routes}
+              onAddMarker={handleAddMarker}
+              armedResourceId={armedResourceId}
+              onPlaceArmedResource={handlePlaceArmedResource}
+              onMarkerSelect={(m) => {
+                setSelectedMarker(m);
+                setIsMarkerModalOpen(true);
+              }}
+              onMarkerDragEnd={handleMarkerDragEnd}
+              onAreaSelect={(a) => {
+                setSelectedArea(a);
+                setIsAreaModalOpen(true);
+              }}
+              onRouteSelect={(r) => {
+                setSelectedRoute(r);
+                setIsRouteModalOpen(true);
+              }}
+              showHazards={showHazards}
+              selectedMunicipalityCoord={selectedMunicipalityCoord}
+              baseIconSize={iconSize}
+              drawMode={drawMode}
+              draftPoints={draftPoints}
+              onMapClickDuringDraw={handleMapClickDuringDraw}
+              modalsOpen={isMarkerModalOpen || isAreaModalOpen || isRouteModalOpen || isSummaryOpen}
+            />
+          </Suspense>
         </main>
       </div>
 
