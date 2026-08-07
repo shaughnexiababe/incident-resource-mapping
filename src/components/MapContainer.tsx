@@ -4,8 +4,9 @@ import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } 
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
-import 'leaflet-control-geocoder';
-import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
+import * as esri from 'esri-leaflet';
+import * as geocoding from 'esri-leaflet-geocoder';
+import 'esri-leaflet-geocoder/dist/esri-leaflet-geocoder.css';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
@@ -120,29 +121,23 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+      // Add Search / Geocoder Control using ArcGIS World Geocoding Service
+      // @ts-ignore
+      const searchControl = geocoding.geosearch({
+        position: 'topright',
+        placeholder: 'Search for exact location...',
+        useMapBounds: false,
+        expanded: false,
+        collapseAfterResult: true
+      }).addTo(map);
 
-      // Add Search / Geocoder Control
-      // @ts-ignore - leaflet-control-geocoder types can be finicky with L namespace
-      const geocoder = L.Control.geocoder({
-        // @ts-ignore
-        geocoder: L.Control.Geocoder.mapbox({ apiKey: accessToken }),
-        defaultMarkGeocode: false,
-        placeholder: "Search location...",
-        collapsed: true,
-        position: 'topright'
-      })
-      .on('markgeocode', (e: any) => {
-        const bbox = e.geocode.bbox;
-        const poly = L.polygon([
-          bbox.getSouthEast(),
-          bbox.getNorthEast(),
-          bbox.getNorthWest(),
-          bbox.getSouthWest()
-        ]);
-        map.fitBounds(poly.getBounds());
-      })
-      .addTo(map);
+      // Handle search results
+      searchControl.on('results', (data: any) => {
+        if (data.results && data.results.length > 0) {
+          const result = data.results[0];
+          map.fitBounds(result.bounds);
+        }
+      });
 
       // Initialize Geoman Controls
       // @ts-ignore
@@ -172,20 +167,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         }
       });
 
-      // Use Mapbox Streets (Light) style for a standard map look
-      const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${accessToken}`;
-      const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      // Use ArcGIS World Streets for a clean, highly detailed light mode look
+      const arcgisUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
-      const finalUrl = accessToken ? mapboxUrl : osmUrl;
-      const attribution = accessToken
-        ? '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-
-      tileLayerRef.current = L.tileLayer(finalUrl, {
+      tileLayerRef.current = L.tileLayer(arcgisUrl, {
         maxZoom: 19,
-        tileSize: accessToken ? 512 : 256,
-        zoomOffset: accessToken ? -1 : 0,
-        attribution: attribution,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
       }).addTo(map);
 
       map.on('zoomend', () => {
