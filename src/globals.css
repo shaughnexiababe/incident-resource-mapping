@@ -144,6 +144,64 @@
   border-top: 1px solid #334155 !important;
 }
 
+/* Dark mode styling for Geoman Toolbar */
+.leaflet-pm-toolbar {
+  background-color: #0f172a !important; /* slate-900 */
+  border: 1px solid #334155 !important; /* slate-700 */
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-buttons-control-button {
+  background-color: #0f172a !important;
+  border-bottom: 1px solid #334155 !important;
+  color: #cbd5e1 !important; /* slate-300 */
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-buttons-control-button:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-buttons-control-button:hover {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #ffffff !important;
+}
+
+.leaflet-buttons-control-button.active {
+  background-color: #2563eb !important; /* blue-600 */
+  color: #ffffff !important;
+}
+
+/* Style the Geoman control icons */
+.leaflet-pm-icon-marker,
+.leaflet-pm-icon-polyline,
+.leaflet-pm-icon-rectangle,
+.leaflet-pm-icon-polygon,
+.leaflet-pm-icon-circle,
+.leaflet-pm-icon-text,
+.leaflet-pm-icon-edit,
+.leaflet-pm-icon-drag,
+.leaflet-pm-icon-delete {
+  filter: invert(1) brightness(1.5);
+}
+
+/* Text Marker styling */
+.leaflet-pm-text-marker {
+  background: white !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  font-family: inherit !important;
+}
+
+.leaflet-pm-text-marker:focus {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px;
+}
+
 @media print {
   @page {
     size: landscape;

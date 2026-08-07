@@ -6,6 +6,8 @@ import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
 import 'leaflet-control-geocoder';
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
+import '@geoman-io/leaflet-geoman-free';
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
 export interface MapContainerProps {
   markers: PrepositionedMarker[];
@@ -141,6 +143,34 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         map.fitBounds(poly.getBounds());
       })
       .addTo(map);
+
+      // Initialize Geoman Controls
+      // @ts-ignore
+      map.pm.addControls({
+        position: 'topleft',
+        drawMarker: true,
+        drawPolyline: true,
+        drawRectangle: true,
+        drawPolygon: true,
+        drawCircle: true,
+        drawCircleMarker: false,
+        drawText: true,
+        editMode: true,
+        dragMode: true,
+        cutPolygon: false,
+        removalMode: true,
+      });
+
+      // Set global path options for new drawings
+      // @ts-ignore
+      map.pm.setGlobalOptions({
+        pathOptions: {
+          color: '#3b82f6',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.4,
+          weight: 3,
+        }
+      });
 
       // Use Mapbox Streets (Light) style for a standard map look
       const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${accessToken}`;
