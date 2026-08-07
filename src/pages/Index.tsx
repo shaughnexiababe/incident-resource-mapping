@@ -52,9 +52,7 @@ const Index = () => {
   const [selectedMunicipalityCoord, setSelectedMunicipalityCoord] = useState<[number, number] | null>(null);
   const [iconSize, setIconSize] = useState<number>(40);
 
-  // Load plan from localStorage if previously saved; otherwise seed the map
-  // with sample markers so a first-time user sees a working example instead
-  // of a completely blank canvas.
+  // Load plan from localStorage if previously saved
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
@@ -64,8 +62,6 @@ const Index = () => {
         if (parsed.markers) setMarkers(parsed.markers);
         if (parsed.areas) setAreas(parsed.areas);
         if (parsed.routes) setRoutes(parsed.routes);
-      } else {
-        setMarkers(INITIAL_MARKERS);
       }
     } catch (e) {
       console.error('Failed to parse saved plan:', e);
