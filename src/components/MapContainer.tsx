@@ -150,6 +150,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     const handleMapClick = (e: L.LeafletMouseEvent) => {
       if (!e.latlng) return;
+
       if (drawMode !== 'none') {
         onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
       } else if (armedResourceId && onPlaceArmedResource) {
@@ -365,27 +366,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
   }, [routes, onRouteSelect]);
 
-  // Force Leaflet to re-measure its container whenever a modal opens or
-  // closes. Dialogs/Sheets lock body scroll and add scrollbar-compensation
-  // padding, which can silently shift layout without the map container's
-  // own box dimensions changing (so our ResizeObserver won't fire). Left
-  // unhandled, this is a common cause of the map looking "broken"/blank
-  // after closing an Area or Route edit modal.
+  // Force Leaflet to re-measure its container whenever relevant state changes
   React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const raf = requestAnimationFrame(() => {
-      invalidateMapSize();
-    });
-    // Add a slight delay to account for potential CSS transitions in modals
-    const timeout = window.setTimeout(() => {
-      invalidateMapSize();
-    }, 180);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(timeout);
-    };
-  }, [invalidateMapSize, modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
+    if (mapRef.current) {
+      mapRef.current.invalidateSize();
+    }
+  }, [modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
   // Handle selected municipality pan/flyTo
   React.useEffect(() => {
