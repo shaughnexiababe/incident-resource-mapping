@@ -400,7 +400,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
+  }, [modalsOpen, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
   // Handle selected municipality pan/flyTo
   React.useEffect(() => {
@@ -562,7 +562,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         onDrop={handleDrop}
         className="absolute inset-0 w-full h-full"
         style={{
-          cursor: drawMode !== 'none' || armedResourceId ? 'crosshair' : 'grab',
+          cursor: armedResourceId ? 'crosshair' : 'grab',
           zIndex: 0
         }}
       />
