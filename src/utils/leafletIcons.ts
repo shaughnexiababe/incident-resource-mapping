@@ -274,6 +274,192 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
       <circle cx="13" cy="8.5" r="1" fill="#ffffff"/>
       <circle cx="15.5" cy="10" r="1" fill="#ffffff"/>
     </g>
+  `,
+
+  // --- Logistics & Event Assets ---
+
+  tent_large: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M2 18 L12 4 L22 18 Z" fill="#475569" stroke="#cbd5e1" stroke-width="1"/>
+      <path d="M12 4 L12 18" stroke="#334155" stroke-width="1.5"/>
+      <path d="M7 11 L17 11" stroke="#334155" stroke-width="1"/>
+      <path d="M12 4 L7 18 M12 4 L17 18" stroke="#334155" stroke-width="0.8"/>
+      <rect x="10" y="14" width="4" height="4" fill="#1e293b"/>
+    </g>
+  `,
+
+  tent_small: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M4 18 L12 8 L20 18 Z" fill="#64748b" stroke="#cbd5e1" stroke-width="1"/>
+      <path d="M12 8 L12 18" stroke="#334155" stroke-width="1"/>
+      <rect x="11" y="15" width="2" height="3" fill="#1e293b"/>
+    </g>
+  `,
+
+  first_aid_post: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="3" y="3" width="18" height="18" rx="2" fill="#ef4444" stroke="#fee2e2" stroke-width="1"/>
+      <rect x="10" y="7" width="4" height="10" fill="#ffffff" rx="0.5"/>
+      <rect x="7" y="10" width="10" height="4" fill="#ffffff" rx="0.5"/>
+    </g>
+  `,
+
+  hydration_station: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 4 C12 4 6 10 6 14 C6 17.3 8.7 20 12 20 C15.3 20 18 17.3 18 14 C18 10 12 4 12 4Z" fill="#0ea5e9" stroke="#e0f2fe" stroke-width="1"/>
+      <path d="M10 14 Q12 16 14 14" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <rect x="7" y="2" width="10" height="2" fill="#334155" rx="0.5"/>
+    </g>
+  `,
+
+  security_checkpoint: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M12 2 L4 5 V11 C4 16.5 7.5 20.2 12 22 C16.5 20.2 20 16.5 20 11 V5 L12 2Z" fill="#1e3a8a" stroke="#bfdbfe" stroke-width="1"/>
+      <path d="M9 12 L11 14 L15 10" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  `,
+
+  generator_power: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="3" y="6" width="18" height="12" rx="1" fill="#eab308" stroke="#422006" stroke-width="1"/>
+      <path d="M13 2 L8 10 L11 10 L6 18" stroke="#422006" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="6" cy="18" r="2" fill="#1e293b"/>
+      <circle cx="18" cy="18" r="2" fill="#1e293b"/>
+    </g>
+  `,
+
+  light_tower: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="11" y="8" width="2" height="12" fill="#94a3b8"/>
+      <path d="M6 8 L18 8 L15 4 L9 4 Z" fill="#facc15" stroke="#422006" stroke-width="0.8"/>
+      <circle cx="12" cy="6" r="2" fill="#ffffff" opacity="0.8"/>
+      <rect x="8" y="18" width="8" height="4" fill="#334155" rx="1"/>
+    </g>
+  `,
+
+  toilet_mobile: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="6" y="4" width="12" height="16" rx="1" fill="#10b981" stroke="#064e3b" stroke-width="1"/>
+      <rect x="8" y="7" width="2" height="1" fill="#ffffff" opacity="0.5"/>
+      <line x1="12" y1="4" x2="12" y2="20" stroke="#064e3b" stroke-width="0.5"/>
+      <circle cx="13.5" cy="12" r="0.8" fill="#064e3b"/>
+    </g>
+  `,
+
+  barrier_crowd: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="2" y="8" width="20" height="8" rx="1" fill="none" stroke="#334155" stroke-width="1.5"/>
+      <line x1="6" y1="8" x2="6" y2="16" stroke="#334155" stroke-width="1"/>
+      <line x1="10" y1="8" x2="10" y2="16" stroke="#334155" stroke-width="1"/>
+      <line x1="14" y1="8" x2="14" y2="16" stroke="#334155" stroke-width="1"/>
+      <line x1="18" y1="8" x2="18" y2="16" stroke="#334155" stroke-width="1"/>
+      <line x1="4" y1="16" x2="4" y2="21" stroke="#334155" stroke-width="1.5"/>
+      <line x1="20" y1="16" x2="20" y2="21" stroke="#334155" stroke-width="1.5"/>
+    </g>
+  `,
+
+  info_kiosk: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <circle cx="12" cy="12" r="10" fill="#8b5cf6" stroke="#ede9fe" stroke-width="1"/>
+      <rect x="11" y="9" width="2" height="7" fill="#ffffff" rx="0.5"/>
+      <circle cx="12" cy="6.5" r="1.5" fill="#ffffff"/>
+    </g>
+  `,
+
+  event_stage: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="2" y="14" width="20" height="6" fill="#f43f5e" rx="1"/>
+      <path d="M4 14 L4 4 L20 4 L20 14" fill="none" stroke="#f43f5e" stroke-width="1.5"/>
+      <rect x="8" y="2" width="8" height="3" fill="#334155"/>
+      <circle cx="6" cy="10" r="1.5" fill="#facc15"/>
+      <circle cx="18" cy="10" r="1.5" fill="#facc15"/>
+    </g>
+  `,
+
+  concession_stand: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="4" y="10" width="16" height="10" fill="#d97706" rx="1"/>
+      <path d="M3 10 L12 4 L21 10 Z" fill="#b45309"/>
+      <rect x="7" y="13" width="10" height="4" fill="#fef3c7"/>
+      <path d="M9 13 V17 M12 13 V17 M15 13 V17" stroke="#b45309" stroke-width="0.5"/>
+    </g>
+  `,
+
+  vip_area: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <polygon points="12,2 15,8 22,9 17,14 18,21 12,18 6,21 7,14 2,9 9,8" fill="#eab308" stroke="#78350f" stroke-width="1"/>
+      <circle cx="12" cy="12" r="3" fill="#ffffff" opacity="0.5"/>
+    </g>
+  `,
+
+  media_center: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="4" y="6" width="12" height="10" rx="1" fill="#7c3aed"/>
+      <circle cx="18" cy="11" r="4" fill="#7c3aed"/>
+      <rect x="7" y="8" width="6" height="4" fill="#ffffff" opacity="0.3"/>
+      <path d="M18 9 L22 7 V15 L18 13 Z" fill="#6d28d9"/>
+    </g>
+  `,
+
+  parade_marker: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <line x1="6" y1="2" x2="6" y2="22" stroke="#334155" stroke-width="2"/>
+      <path d="M6 4 L20 9 L6 14 Z" fill="#10b981" stroke="#064e3b" stroke-width="1"/>
+      <circle cx="6" cy="4" r="1.5" fill="#334155"/>
+    </g>
+  `,
+
+  lost_found: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <circle cx="10" cy="10" r="7" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+      <line x1="15" y1="15" x2="21" y2="21" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+      <text x="7" y="13" font-family="Arial" font-size="8" fill="#6366f1" font-weight="bold">?</text>
+    </g>
+  `,
+
+  evacuation_center: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M3 10 L12 2 L21 10 V20 H3 Z" fill="#16a34a" stroke="#dcfce7" stroke-width="1"/>
+      <rect x="10" y="14" width="4" height="6" fill="#dcfce7"/>
+      <path d="M12 7 L15 10 H9 Z" fill="#ffffff"/>
+    </g>
+  `,
+
+  triage_facility: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="2" y="6" width="20" height="14" rx="2" fill="#ef4444" stroke="#fee2e2" stroke-width="1"/>
+      <path d="M6 13 H18" stroke="#ffffff" stroke-width="2"/>
+      <path d="M12 9 V17" stroke="#ffffff" stroke-width="2"/>
+      <path d="M4 6 L8 2 H16 L20 6" fill="none" stroke="#ef4444" stroke-width="1.5"/>
+    </g>
+  `,
+
+  distribution_point: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M4 8 L12 4 L20 8 V18 L12 22 L4 18 Z" fill="#0ea5e9" stroke="#e0f2fe" stroke-width="1"/>
+      <path d="M4 8 L12 12 L20 8 M12 12 V22" stroke="#e0f2fe" stroke-width="1"/>
+      <path d="M8 6 L16 10" stroke="#ffffff" stroke-width="0.5" opacity="0.5"/>
+    </g>
+  `,
+
+  morgue_temp: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="4" y="4" width="16" height="16" rx="2" fill="#475569" stroke="#94a3b8" stroke-width="1"/>
+      <path d="M12 8 C10 8 8 10 8 12 C8 14 10 16 12 16 C14 16 16 14 16 12 C16 10 14 8 12 8 Z" fill="#94a3b8"/>
+      <circle cx="10.5" cy="11.5" r="1.5" fill="#334155"/>
+      <circle cx="13.5" cy="11.5" r="1.5" fill="#334155"/>
+      <path d="M10 14.5 Q12 15.5 14 14.5" stroke="#334155" stroke-width="1" fill="none"/>
+    </g>
+  `,
+
+  decon_station: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <rect x="4" y="4" width="16" height="14" fill="#06b6d4" opacity="0.3"/>
+      <path d="M4 4 V18 M20 4 V18" stroke="#06b6d4" stroke-width="2"/>
+      <path d="M4 4 H20" stroke="#06b6d4" stroke-width="2"/>
+      <path d="M7 8 Q12 10 17 8 M7 12 Q12 14 17 12 M7 16 Q12 18 17 16" stroke="#ffffff" stroke-width="1" fill="none"/>
+      <circle cx="12" cy="2" r="1" fill="#06b6d4"/>
+    </g>
   `
 };
 

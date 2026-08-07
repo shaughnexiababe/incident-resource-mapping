@@ -186,20 +186,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className="p-2 bg-slate-900 border-b border-slate-800">
-          <TabsList className="w-full bg-slate-800/90 p-1 text-slate-400 grid grid-cols-5 h-9">
-            <TabsTrigger value="vehicles" className="text-[10px] py-1 data-[state=active]:bg-red-600 data-[state=active]:text-white font-semibold">
+          <TabsList className="w-full bg-slate-800/90 p-1 text-slate-400 grid grid-cols-6 h-9">
+            <TabsTrigger value="vehicles" className="text-[9px] py-1 data-[state=active]:bg-red-600 data-[state=active]:text-white font-semibold">
               Vehicles
             </TabsTrigger>
-            <TabsTrigger value="personnel" className="text-[10px] py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-semibold">
+            <TabsTrigger value="personnel" className="text-[9px] py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-semibold">
               Personnel
             </TabsTrigger>
-            <TabsTrigger value="facilities" className="text-[10px] py-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white font-semibold">
+            <TabsTrigger value="facilities" className="text-[9px] py-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white font-semibold">
               ICS
             </TabsTrigger>
-            <TabsTrigger value="layers" className="text-[10px] py-1 data-[state=active]:bg-cyan-600 data-[state=active]:text-white font-semibold">
-              Layers ({areas.length + routes.length})
+            <TabsTrigger value="logistics" className="text-[9px] py-1 data-[state=active]:bg-orange-600 data-[state=active]:text-white font-semibold">
+              Logistics
             </TabsTrigger>
-            <TabsTrigger value="locations" className="text-[10px] py-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-semibold">
+            <TabsTrigger value="layers" className="text-[9px] py-1 data-[state=active]:bg-cyan-600 data-[state=active]:text-white font-semibold">
+              Layers
+            </TabsTrigger>
+            <TabsTrigger value="locations" className="text-[9px] py-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white font-semibold">
               Towns
             </TabsTrigger>
           </TabsList>
@@ -230,7 +233,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {getResources('facility').map(renderDraggableCard)}
         </TabsContent>
 
-        {/* Tab 4: Tactical Layers (Areas & Routes) */}
+        {/* Tab 4: Logistics & Event Assets */}
+        <TabsContent value="logistics" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            Event & Disaster Logistics
+          </div>
+          {getResources('logistics').map(renderDraggableCard)}
+        </TabsContent>
+
+        {/* Tab 5: Tactical Layers (Areas & Routes) */}
         <TabsContent value="layers" className="flex-1 overflow-y-auto p-3 space-y-3 mt-0">
           {/* Operational Area Divisions */}
           <div className="space-y-1.5">

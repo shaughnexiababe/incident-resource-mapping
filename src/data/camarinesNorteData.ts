@@ -310,6 +310,218 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     badgeBg: 'bg-slate-200 text-slate-800 border-slate-400',
     description: 'Multi-agency regional coordination center',
     defaultCallsign: 'EOC-MAIN'
+  },
+
+  // Event & Tactical Logistics
+  {
+    id: 'tent_large',
+    name: 'Large Operations Tent',
+    category: 'logistics',
+    iconName: 'Tent',
+    color: '#475569',
+    badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
+    description: 'Large multi-purpose HQ or shelter tent',
+    defaultCallsign: 'TENT-L-1'
+  },
+  {
+    id: 'tent_small',
+    name: 'Small Response Tent',
+    category: 'logistics',
+    iconName: 'Tent',
+    color: '#64748b',
+    badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
+    description: 'Rapid deployment small response/utility tent',
+    defaultCallsign: 'TENT-S-1'
+  },
+  {
+    id: 'first_aid_post',
+    name: 'First Aid Station',
+    category: 'logistics',
+    iconName: 'PlusSquare',
+    color: '#ef4444',
+    badgeBg: 'bg-red-50 text-red-700 border-red-200',
+    description: 'Field medical first-aid and triage point',
+    defaultCallsign: 'MED-POST'
+  },
+  {
+    id: 'hydration_station',
+    name: 'Hydration Station',
+    category: 'logistics',
+    iconName: 'Droplets',
+    color: '#0ea5e9',
+    badgeBg: 'bg-sky-50 text-sky-700 border-sky-200',
+    description: 'Potable water and hydration distribution',
+    defaultCallsign: 'WATER-POINT'
+  },
+  {
+    id: 'security_checkpoint',
+    name: 'Security Post',
+    category: 'logistics',
+    iconName: 'ShieldCheck',
+    color: '#1e3a8a',
+    badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    description: 'Manned security or access control point',
+    defaultCallsign: 'SEC-POST'
+  },
+  {
+    id: 'generator_power',
+    name: 'Mobile Generator',
+    category: 'logistics',
+    iconName: 'Zap',
+    color: '#eab308',
+    badgeBg: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    description: 'High-capacity field power generation unit',
+    defaultCallsign: 'POWER-GEN'
+  },
+  {
+    id: 'light_tower',
+    name: 'Mobile Light Tower',
+    category: 'logistics',
+    iconName: 'Sun',
+    color: '#facc15',
+    badgeBg: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    description: 'Telescopic lighting for night operations',
+    defaultCallsign: 'LITE-TOWER'
+  },
+  {
+    id: 'toilet_mobile',
+    name: 'Mobile Toilet Block',
+    category: 'logistics',
+    iconName: 'User',
+    color: '#10b981',
+    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    description: 'Sanitation facilities for events/deployments',
+    defaultCallsign: 'SAN-UNIT'
+  },
+  {
+    id: 'barrier_crowd',
+    name: 'Crowd Barriers',
+    category: 'logistics',
+    iconName: 'Fence',
+    color: '#334155',
+    badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+    description: 'Steel crowd control and perimeter barriers',
+    defaultCallsign: 'BARRIER-SET'
+  },
+  {
+    id: 'info_kiosk',
+    name: 'Information Kiosk',
+    category: 'logistics',
+    iconName: 'Info',
+    color: '#8b5cf6',
+    badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
+    description: 'Public information or registration desk',
+    defaultCallsign: 'INFO-DESK'
+  },
+  {
+    id: 'event_stage',
+    name: 'Main Stage / Performance',
+    category: 'logistics',
+    iconName: 'Mic2',
+    color: '#f43f5e',
+    badgeBg: 'bg-rose-100 text-rose-800 border-rose-300',
+    description: 'Main event stage and sound system',
+    defaultCallsign: 'MAIN-STAGE'
+  },
+  {
+    id: 'concession_stand',
+    name: 'Food & Concessions',
+    category: 'logistics',
+    iconName: 'Utensils',
+    color: '#d97706',
+    badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+    description: 'Food vendors and concession area',
+    defaultCallsign: 'FOOD-STAND'
+  },
+  {
+    id: 'vip_area',
+    name: 'VIP / Guest Area',
+    category: 'logistics',
+    iconName: 'Star',
+    color: '#eab308',
+    badgeBg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    description: 'Designated area for VIPs and honored guests',
+    defaultCallsign: 'VIP-AREA'
+  },
+  {
+    id: 'media_center',
+    name: 'Media & Press Center',
+    category: 'logistics',
+    iconName: 'Video',
+    color: '#7c3aed',
+    badgeBg: 'bg-violet-100 text-violet-800 border-violet-300',
+    description: 'Facility for media personnel and broadcasting',
+    defaultCallsign: 'MEDIA-CENTER'
+  },
+  {
+    id: 'parade_marker',
+    name: 'Parade Route Marker',
+    category: 'logistics',
+    iconName: 'Flag',
+    color: '#10b981',
+    badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    description: 'Marker for parade route and checkpoints',
+    defaultCallsign: 'PARADE-MKR'
+  },
+  {
+    id: 'lost_found',
+    name: 'Lost and Found',
+    category: 'logistics',
+    iconName: 'Search',
+    color: '#6366f1',
+    badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    description: 'Assistance point for lost items or persons',
+    defaultCallsign: 'LOST-FOUND'
+  },
+  {
+    id: 'evacuation_center',
+    name: 'Evacuation Center',
+    category: 'logistics',
+    iconName: 'Home',
+    color: '#16a34a',
+    badgeBg: 'bg-green-100 text-green-800 border-green-300',
+    description: 'Designated safe shelter for evacuees',
+    defaultCallsign: 'EVAC-CENTER'
+  },
+  {
+    id: 'triage_facility',
+    name: 'Mass Triage Center',
+    category: 'logistics',
+    iconName: 'Activity',
+    color: '#ef4444',
+    badgeBg: 'bg-red-100 text-red-800 border-red-300',
+    description: 'Large scale medical assessment facility',
+    defaultCallsign: 'TRIAGE-BASE'
+  },
+  {
+    id: 'distribution_point',
+    name: 'Relief Distribution',
+    category: 'logistics',
+    iconName: 'Package',
+    color: '#0ea5e9',
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+    description: 'Food, water, and relief goods distribution',
+    defaultCallsign: 'RELIEF-POINT'
+  },
+  {
+    id: 'morgue_temp',
+    name: 'Temporary Morgue',
+    category: 'logistics',
+    iconName: 'Skull',
+    color: '#475569',
+    badgeBg: 'bg-slate-200 text-slate-900 border-slate-400',
+    description: 'Temporary facility for remains management',
+    defaultCallsign: 'TEMP-MORGUE'
+  },
+  {
+    id: 'decon_station',
+    name: 'Decontamination Station',
+    category: 'logistics',
+    iconName: 'Waves',
+    color: '#06b6d4',
+    badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+    description: 'Hazmat decontamination and cleanup point',
+    defaultCallsign: 'DECON-STN'
   }
 ];
 

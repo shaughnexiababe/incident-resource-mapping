@@ -1,4 +1,4 @@
-export type ResourceCategory = 'vehicle' | 'personnel' | 'facility' | 'hazard';
+export type ResourceCategory = 'vehicle' | 'personnel' | 'facility' | 'hazard' | 'logistics';
 
 export type ResourceTypeId = 
   // Vehicles & Heavy Equipment
@@ -31,7 +31,29 @@ export type ResourceTypeId =
   | 'helibase'
   | 'helispot'
   | 'eoc'
-  | 'medical_post';
+  | 'medical_post'
+  // Event & Tactical Logistics
+  | 'tent_large'
+  | 'tent_small'
+  | 'first_aid_post'
+  | 'hydration_station'
+  | 'security_checkpoint'
+  | 'generator_power'
+  | 'light_tower'
+  | 'toilet_mobile'
+  | 'barrier_crowd'
+  | 'info_kiosk'
+  | 'event_stage'
+  | 'concession_stand'
+  | 'vip_area'
+  | 'media_center'
+  | 'parade_marker'
+  | 'lost_found'
+  | 'evacuation_center'
+  | 'triage_facility'
+  | 'distribution_point'
+  | 'morgue_temp'
+  | 'decon_station';
 
 export interface ResourceDefinition {
   id: ResourceTypeId;
