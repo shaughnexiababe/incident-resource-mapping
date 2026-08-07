@@ -21,9 +21,8 @@ export interface MapContainerProps {
   showHazards: boolean;
   selectedMunicipalityCoord: [number, number] | null;
   baseIconSize: number;
-  drawMode: 'none' | 'area' | 'route';
-  draftPoints: [number, number][];
-  onMapClickDuringDraw: (lat: number, lng: number) => void;
+  onFinishDrawArea: (points: [number, number][]) => void;
+  onFinishDrawRoute: (points: [number, number][]) => void;
   /** Resource id currently "armed" for tap-to-place, or null. This is the
    * touch-device fallback for drag-and-drop placement, which never fires
    * on mobile/tablet browsers. */
@@ -50,9 +49,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   showHazards,
   selectedMunicipalityCoord,
   baseIconSize,
-  drawMode,
-  draftPoints,
-  onMapClickDuringDraw,
+  onFinishDrawArea,
+  onFinishDrawRoute,
   armedResourceId = null,
   onPlaceArmedResource,
   modalsOpen = false,
@@ -144,17 +142,39 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       // @ts-ignore
       map.pm.addControls({
         position: 'topleft',
-        drawMarker: true,
+        drawMarker: false,
         drawPolyline: true,
         drawRectangle: true,
         drawPolygon: true,
-        drawCircle: true,
+        drawCircle: false,
         drawCircleMarker: false,
         drawText: true,
         editMode: true,
         dragMode: true,
         cutPolygon: false,
         removalMode: true,
+        oneBlock: true,
+      });
+
+      // Handle Geoman creation events to trigger app modals
+      map.on('pm:create', (e: any) => {
+        const layer = e.layer;
+        const shape = e.shape;
+
+        if (shape === 'Polygon' || shape === 'Rectangle') {
+          const latlngs = layer.getLatLngs()[0];
+          // Leaflet-Geoman sometimes returns nested arrays for polygons
+          const flatLatLngs = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
+          const points = flatLatLngs.map((ll: any) => [ll.lat, ll.lng]);
+          onFinishDrawArea(points);
+          // Remove the temporary Geoman layer; the app state will re-render its own
+          layer.remove();
+        } else if (shape === 'Polyline') {
+          const latlngs = layer.getLatLngs();
+          const points = latlngs.map((ll: L.LatLng) => [ll.lat, ll.lng]);
+          onFinishDrawRoute(points);
+          layer.remove();
+        }
       });
 
       // Set global path options for new drawings
@@ -214,9 +234,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     const handleMapClick = (e: L.LeafletMouseEvent) => {
       if (!e.latlng) return;
 
-      if (drawMode !== 'none') {
-        onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
-      } else if (armedResourceId && onPlaceArmedResource) {
+      if (armedResourceId && onPlaceArmedResource) {
         onPlaceArmedResource(e.latlng.lat, e.latlng.lng);
       }
     };
@@ -225,67 +243,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     return () => {
       map.off('click', handleMapClick);
     };
-  }, [drawMode, onMapClickDuringDraw, armedResourceId, onPlaceArmedResource]);
-
-  // Render Draft Drawing Layer
-  React.useEffect(() => {
-    const draftGroup = draftLayerRef.current;
-    if (!draftGroup) return;
-
-    draftGroup.clearLayers();
-
-    if (drawMode !== 'none' && draftPoints.length > 0) {
-      const validPoints = dedupePoints(draftPoints);
-
-      try {
-        // Draw point markers
-        validPoints.forEach((pt, index) => {
-          const circle = L.circleMarker(pt, {
-            radius: 5,
-            color: '#ffffff',
-            fillColor: drawMode === 'area' ? '#3b82f6' : '#10b981',
-            fillOpacity: 1,
-            weight: 2,
-          });
-          circle.bindTooltip(`Pt ${index + 1}`, { 
-            permanent: true, 
-            direction: 'top', 
-            className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow' 
-          });
-          draftGroup.addLayer(circle);
-        });
-
-        if (drawMode === 'route' && validPoints.length >= 2) {
-          const polyline = L.polyline(validPoints, {
-            color: '#10b981',
-            weight: 4,
-            dashArray: '6, 6',
-          });
-          draftGroup.addLayer(polyline);
-        } else if (drawMode === 'area') {
-          if (validPoints.length === 2) {
-            const polyline = L.polyline(validPoints, {
-              color: '#3b82f6',
-              weight: 3,
-              dashArray: '4, 4',
-            });
-            draftGroup.addLayer(polyline);
-          } else if (validPoints.length >= 3) {
-            const polygon = L.polygon(validPoints, {
-              color: '#3b82f6',
-              fillColor: '#3b82f6',
-              fillOpacity: 0.25,
-              weight: 2,
-              dashArray: '4, 4',
-            });
-            draftGroup.addLayer(polygon);
-          }
-        }
-      } catch (err) {
-        console.error('Error drawing draft shape:', err);
-      }
-    }
-  }, [drawMode, draftPoints, dedupePoints]);
+  }, [armedResourceId, onPlaceArmedResource]);
 
   // Render Operational Area Divisions
   React.useEffect(() => {
