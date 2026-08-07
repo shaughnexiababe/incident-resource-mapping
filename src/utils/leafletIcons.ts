@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import * as L from 'leaflet';
 import { RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { ResourceTypeId } from '@/types/disaster';
 

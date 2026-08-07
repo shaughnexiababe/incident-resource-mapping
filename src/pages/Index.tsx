@@ -6,13 +6,14 @@ import { AreaEditModal } from '@/components/AreaEditModal';
 import { RouteEditModal } from '@/components/RouteEditModal';
 import { PlanSummaryDrawer } from '@/components/PlanSummaryDrawer';
 
+import { MapContainerProps } from '@/components/MapContainer';
 // Leaflet (~150KB) and its React wrapper logic only need to load once the
 // user is actually looking at the map — lazy-loading it out of the main
 // bundle is the single biggest win against the "chunk too large" build
 // warning, since nothing else in the app depends on it.
 const MapContainer = lazy(() =>
   import('@/components/MapContainer').then((m) => ({ default: m.MapContainer }))
-);
+) as React.ComponentType<MapContainerProps>;
 import { PrepositionedMarker, ResourceTypeId, PrepositionPlan, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { RESOURCE_CATALOG, MUNICIPALITIES, INITIAL_MARKERS } from '@/data/camarinesNorteData';
 import { showSuccess, showError } from '@/utils/toast';

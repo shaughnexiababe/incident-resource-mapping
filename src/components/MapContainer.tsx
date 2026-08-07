@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
 import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
 
-interface MapContainerProps {
+export interface MapContainerProps {
   markers: PrepositionedMarker[];
   areas: OperationalArea[];
   routes: TacticalRoute[];
