@@ -440,7 +440,7 @@ const Index = () => {
           onArmResource={handleArmResource}
         />
 
-        <main className="flex-1 h-full min-h-0 relative">
+        <main className="flex-1 h-full min-h-0 relative overflow-hidden">
           {/* Floating Drawing Control Overlay */}
           {drawMode !== 'none' && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">

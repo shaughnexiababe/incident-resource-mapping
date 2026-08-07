@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
@@ -65,6 +65,38 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
   const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_ZOOM);
 
+  const invalidateMapSize = useCallback(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (mapRef.current) {
+          map.invalidateSize();
+          map.invalidateSize();
+        }
+      });
+    });
+  }, []);
+
+  const sanitizePoints = useCallback((points: [number, number][]) => {
+    return points.filter(
+      (point): point is [number, number] =>
+        Array.isArray(point) &&
+        point.length === 2 &&
+        Number.isFinite(point[0]) &&
+        Number.isFinite(point[1])
+    );
+  }, []);
+
+  const dedupePoints = useCallback((points: [number, number][]) => {
+    const sanitized = sanitizePoints(points);
+    return sanitized.filter((point, index) => {
+      if (index === 0) return true;
+      const prev = sanitized[index - 1];
+      return Math.hypot(prev[0] - point[0], prev[1] - point[1]) > 1e-6;
+    });
+  }, [sanitizePoints]);
+
   // Initialize Leaflet Map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -90,17 +122,29 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       // Draft layer group for interactive drawing
       draftLayerRef.current = L.layerGroup().addTo(map);
 
+      if (containerRef.current) {
+        containerRef.current.style.touchAction = 'none';
+        containerRef.current.style.webkitTapHighlightColor = 'transparent';
+      }
+
       mapRef.current = map;
+      invalidateMapSize();
+
+      map.whenReady(() => {
+        invalidateMapSize();
+      });
+
+      const handleWindowResize = () => invalidateMapSize();
+      window.addEventListener('resize', handleWindowResize);
 
       // Handle ResizeObserver to keep leaflet container sized correctly
       const resizeObserver = new ResizeObserver(() => {
-        if (mapRef.current) {
-          mapRef.current.invalidateSize();
-        }
+        invalidateMapSize();
       });
       resizeObserver.observe(containerRef.current);
 
       return () => {
+        window.removeEventListener('resize', handleWindowResize);
         resizeObserver.disconnect();
         if (mapRef.current) {
           mapRef.current.remove();
@@ -110,7 +154,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     } catch (err) {
       console.error('Error initializing Leaflet map:', err);
     }
-  }, []);
+  }, [invalidateMapSize]);
 
   // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
   // placement mode (the mobile fallback for drag-and-drop, which never
@@ -142,10 +186,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     draftGroup.clearLayers();
 
     if (drawMode !== 'none' && draftPoints.length > 0) {
+      const validPoints = dedupePoints(draftPoints);
+
       try {
         // Draw point markers
-        draftPoints.forEach((pt, index) => {
-          if (!pt || pt.length !== 2 || isNaN(pt[0]) || isNaN(pt[1])) return;
+        validPoints.forEach((pt, index) => {
           const circle = L.circleMarker(pt, {
             radius: 5,
             color: '#ffffff',
@@ -153,31 +198,31 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             fillOpacity: 1,
             weight: 2,
           });
-          circle.bindTooltip(`Pt ${index + 1}`, { 
-            permanent: true, 
-            direction: 'top', 
-            className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow' 
+          circle.bindTooltip(`Pt ${index + 1}`, {
+            permanent: true,
+            direction: 'top',
+            className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow'
           });
           draftGroup.addLayer(circle);
         });
 
-        if (drawMode === 'route' && draftPoints.length >= 2) {
-          const polyline = L.polyline(draftPoints, {
+        if (drawMode === 'route' && validPoints.length >= 2) {
+          const polyline = L.polyline(validPoints, {
             color: '#10b981',
             weight: 4,
             dashArray: '6, 6',
           });
           draftGroup.addLayer(polyline);
         } else if (drawMode === 'area') {
-          if (draftPoints.length === 2) {
-            const polyline = L.polyline(draftPoints, {
+          if (validPoints.length === 2) {
+            const polyline = L.polyline(validPoints, {
               color: '#3b82f6',
               weight: 3,
               dashArray: '4, 4',
             });
             draftGroup.addLayer(polyline);
-          } else if (draftPoints.length >= 3) {
-            const polygon = L.polygon(draftPoints, {
+          } else if (validPoints.length >= 3) {
+            const polygon = L.polygon(validPoints, {
               color: '#3b82f6',
               fillColor: '#3b82f6',
               fillOpacity: 0.25,
@@ -191,7 +236,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         console.error('Error drawing draft shape:', err);
       }
     }
-  }, [drawMode, draftPoints]);
+  }, [drawMode, draftPoints, dedupePoints]);
 
   // Render Operational Area Divisions
   useEffect(() => {
@@ -345,10 +390,16 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     const map = mapRef.current;
     if (!map) return;
     const raf = requestAnimationFrame(() => {
-      map.invalidateSize();
+      invalidateMapSize();
     });
-    return () => cancelAnimationFrame(raf);
-  }, [modalsOpen]);
+    const timeout = window.setTimeout(() => {
+      invalidateMapSize();
+    }, 180);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timeout);
+    };
+  }, [invalidateMapSize, modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
   // Handle selected municipality pan/flyTo
   useEffect(() => {
@@ -423,8 +474,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       if (
         typeof markerData.lat !== 'number' ||
         typeof markerData.lng !== 'number' ||
-        isNaN(markerData.lat) ||
-        isNaN(markerData.lng)
+        !Number.isFinite(markerData.lat) ||
+        !Number.isFinite(markerData.lng)
       ) {
         console.error('Skipping marker with invalid coordinates:', markerData);
         return;
@@ -499,7 +550,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   };
 
   return (
-    <div className="w-full h-full relative bg-slate-900">
+    <div className="w-full h-full min-h-0 relative flex-1 bg-slate-900 overflow-hidden">
       <div
         ref={containerRef}
         onDragOver={handleDragOver}

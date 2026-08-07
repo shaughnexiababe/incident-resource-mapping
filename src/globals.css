@@ -88,4 +88,11 @@
   width: 100%;
   height: 100%;
   z-index: 1;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.leaflet-control-container {
+  touch-action: manipulation;
 }
