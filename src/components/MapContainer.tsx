@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import * as L from 'leaflet';
 import { CAMARINES_NORTE_CENTER, DEFAULT_ZOOM, HAZARD_ZONES, RESOURCE_CATALOG } from '@/data/camarinesNorteData';
 import { PrepositionedMarker, ResourceTypeId, OperationalArea, TacticalRoute } from '@/types/disaster';
@@ -53,19 +53,19 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onPlaceArmedResource,
   modalsOpen = false,
 }) => {
-  const mapRef = useRef<L.Map | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const leafletMarkersRef = useRef<Map<string, L.Marker>>(new Map());
-  const hazardPolygonsRef = useRef<L.Polygon[]>([]);
+  const mapRef = React.useRef<L.Map | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const leafletMarkersRef = React.useRef<Map<string, L.Marker>>(new Map());
+  const hazardPolygonsRef = React.useRef<L.Polygon[]>([]);
   
   // Custom drawn elements refs
-  const savedAreaPolygonsRef = useRef<Map<string, L.Polygon>>(new Map());
-  const savedRoutePolylinesRef = useRef<Map<string, L.Polyline>>(new Map());
-  const draftLayerRef = useRef<L.LayerGroup | null>(null);
+  const savedAreaPolygonsRef = React.useRef<Map<string, L.Polygon>>(new Map());
+  const savedRoutePolylinesRef = React.useRef<Map<string, L.Polyline>>(new Map());
+  const draftLayerRef = React.useRef<L.LayerGroup | null>(null);
 
-  const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_ZOOM);
+  const [currentZoom, setCurrentZoom] = React.useState<number>(DEFAULT_ZOOM);
 
-  const invalidateMapSize = useCallback(() => {
+  const invalidateMapSize = React.useCallback(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
     requestAnimationFrame(() => {
@@ -75,7 +75,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
   }, []);
 
-  const sanitizePoints = useCallback((points: [number, number][]) => {
+  const sanitizePoints = React.useCallback((points: [number, number][]) => {
     return points.filter(
       (point): point is [number, number] =>
         Array.isArray(point) &&
@@ -85,7 +85,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     );
   }, []);
 
-  const dedupePoints = useCallback((points: [number, number][]) => {
+  const dedupePoints = React.useCallback((points: [number, number][]) => {
     const sanitized = sanitizePoints(points);
     return sanitized.filter((point, index) => {
       if (index === 0) return true;
@@ -96,7 +96,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [sanitizePoints]);
 
   // Initialize Leaflet Map
-  useEffect(() => {
+  React.useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     try {
@@ -144,7 +144,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
   // placement mode (the mobile fallback for drag-and-drop, which never
   // fires on touch devices).
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -164,7 +164,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [drawMode, onMapClickDuringDraw, armedResourceId, onPlaceArmedResource]);
 
   // Render Draft Drawing Layer
-  useEffect(() => {
+  React.useEffect(() => {
     const draftGroup = draftLayerRef.current;
     if (!draftGroup) return;
 
@@ -224,7 +224,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [drawMode, draftPoints, dedupePoints]);
 
   // Render Operational Area Divisions
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -296,7 +296,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [areas, onAreaSelect]);
 
   // Render Tactical Routes
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -371,7 +371,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   // own box dimensions changing (so our ResizeObserver won't fire). Left
   // unhandled, this is a common cause of the map looking "broken"/blank
   // after closing an Area or Route edit modal.
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const raf = requestAnimationFrame(() => {
@@ -388,7 +388,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [invalidateMapSize, modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
   // Handle selected municipality pan/flyTo
-  useEffect(() => {
+  React.useEffect(() => {
     if (selectedMunicipalityCoord && mapRef.current) {
       mapRef.current.flyTo(selectedMunicipalityCoord, 14, {
         duration: 1.2,
@@ -397,7 +397,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [selectedMunicipalityCoord]);
 
   // Handle Hazard Layers
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -441,7 +441,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const effectiveSize = Math.round(baseIconSize * zoomFactor);
 
   // Update Markers
-  useEffect(() => {
+  React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
