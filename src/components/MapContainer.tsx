@@ -64,15 +64,23 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const draftLayerRef = React.useRef<L.LayerGroup | null>(null);
 
   const [currentZoom, setCurrentZoom] = React.useState<number>(DEFAULT_ZOOM);
+  const tileLayerRef = React.useRef<L.TileLayer | null>(null);
 
   const invalidateMapSize = React.useCallback(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
+    // Perform multiple invalidations to handle complex layout shifts
     requestAnimationFrame(() => {
       if (mapRef.current) {
         map.invalidateSize();
       }
     });
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        map.invalidateSize();
+      }
+    }, 250);
+    return () => clearTimeout(timer);
   }, []);
 
   const sanitizePoints = React.useCallback((points: [number, number][]) => {
@@ -108,7 +116,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      tileLayerRef.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
@@ -534,14 +542,16 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   };
 
   return (
-    <div className="w-full h-full min-h-0 relative flex-1 bg-slate-900 overflow-hidden">
+    <div className="w-full h-full min-h-0 relative flex-1 bg-slate-950 overflow-hidden">
       <div
         ref={containerRef}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={`w-full h-full relative bg-slate-900 ${
-          drawMode !== 'none' || armedResourceId ? 'cursor-crosshair' : ''
-        }`}
+        className="absolute inset-0 w-full h-full"
+        style={{
+          cursor: drawMode !== 'none' || armedResourceId ? 'crosshair' : 'grab',
+          zIndex: 0
+        }}
       />
 
       {/* Quick Recenter Button */}
