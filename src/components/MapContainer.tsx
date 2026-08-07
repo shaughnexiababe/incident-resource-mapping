@@ -369,7 +369,15 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   // Force Leaflet to re-measure its container whenever relevant state changes
   React.useEffect(() => {
     if (mapRef.current) {
-      mapRef.current.invalidateSize();
+      // Use both requestAnimationFrame and a slightly longer timeout to
+      // catch potential flexbox layout shifts after React re-renders.
+      requestAnimationFrame(() => {
+        if (mapRef.current) mapRef.current.invalidateSize();
+      });
+      const timer = setTimeout(() => {
+        if (mapRef.current) mapRef.current.invalidateSize();
+      }, 200);
+      return () => clearTimeout(timer);
     }
   }, [modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
@@ -471,7 +479,11 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             draggable: true,
           }).addTo(map);
 
-          leafletMarker.on('click', () => {
+          leafletMarker.on('click', (e) => {
+            // Stop propagation to prevent map click from triggering
+            if (e.originalEvent) {
+              e.originalEvent.stopPropagation();
+            }
             onMarkerSelect(markerData);
           });
 
