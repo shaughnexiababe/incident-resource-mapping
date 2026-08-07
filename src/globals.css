@@ -115,7 +115,6 @@
   .leaflet-control-attribution,
   button,
   [role="tablist"],
-  .z-[1000],
   .absolute.bottom-6.right-4 {
     display: none !important;
   }

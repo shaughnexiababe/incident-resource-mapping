@@ -439,7 +439,7 @@ const Index = () => {
         <main className="flex-1 h-full min-h-0 relative">
           {/* Floating Drawing Control Overlay */}
           {drawMode !== 'none' && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 print:hidden">
               <div className="text-xs">
                 <span className="font-bold text-amber-400 block uppercase">
                   {drawMode === 'area' ? 'Drawing Area Division' : 'Drawing Tactical Route'}
@@ -484,7 +484,7 @@ const Index = () => {
 
           {/* Floating Tap-to-Place Overlay (mobile fallback for drag & drop) */}
           {armedResourceId && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 print:hidden">
               <div className="text-xs">
                 <span className="font-bold text-emerald-400 block uppercase">
                   {RESOURCE_CATALOG.find((r) => r.id === armedResourceId)?.name || 'Resource'} Armed
