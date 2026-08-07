@@ -142,14 +142,20 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       })
       .addTo(map);
 
-      // Use Mapbox Dark style for a premium tactical look
-      const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${accessToken}`;
+      // Use Mapbox Streets (Light) style for a standard map look
+      const mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${accessToken}`;
+      const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-      tileLayerRef.current = L.tileLayer(mapboxUrl, {
+      const finalUrl = accessToken ? mapboxUrl : osmUrl;
+      const attribution = accessToken
+        ? '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+      tileLayerRef.current = L.tileLayer(finalUrl, {
         maxZoom: 19,
-        tileSize: 512,
-        zoomOffset: -1,
-        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        tileSize: accessToken ? 512 : 256,
+        zoomOffset: accessToken ? -1 : 0,
+        attribution: attribution,
       }).addTo(map);
 
       map.on('zoomend', () => {
