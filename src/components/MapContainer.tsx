@@ -6,8 +6,6 @@ import { createMarkerIcon } from '@/utils/leafletIcons';
 import { Locate } from 'lucide-react';
 import 'leaflet-control-geocoder';
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
-import '@geoman-io/leaflet-geoman-free';
-import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 
 export interface MapContainerProps {
   markers: PrepositionedMarker[];
@@ -22,8 +20,8 @@ export interface MapContainerProps {
   selectedMunicipalityCoord: [number, number] | null;
   baseIconSize: number;
   drawMode: 'none' | 'area' | 'route';
-  onFinishDrawArea: (points: [number, number][]) => void;
-  onFinishDrawRoute: (points: [number, number][]) => void;
+  draftPoints: [number, number][];
+  onMapClickDuringDraw: (lat: number, lng: number) => void;
   /** Resource id currently "armed" for tap-to-place, or null. This is the
    * touch-device fallback for drag-and-drop placement, which never fires
    * on mobile/tablet browsers. */
@@ -51,8 +49,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   selectedMunicipalityCoord,
   baseIconSize,
   drawMode,
-  onFinishDrawArea,
-  onFinishDrawRoute,
+  draftPoints,
+  onMapClickDuringDraw,
   armedResourceId = null,
   onPlaceArmedResource,
   modalsOpen = false,
@@ -87,7 +85,28 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize Leaflet Map
+  const sanitizePoints = React.useCallback((points: [number, number][]) => {
+    return points.filter(
+      (point): point is [number, number] =>
+        Array.isArray(point) &&
+        point.length === 2 &&
+        Number.isFinite(point[0]) &&
+        Number.isFinite(point[1])
+    );
+  }, []);
+
+  const dedupePoints = React.useCallback((points: [number, number][]) => {
+    const sanitized = sanitizePoints(points);
+    return sanitized.filter((point, index) => {
+      if (index === 0) return true;
+      const prev = sanitized[index - 1];
+      // Check for identical or near-identical consecutive points (approx 10cm distance)
+      return Math.hypot(prev[0] - point[0], prev[1] - point[1]) > 1e-6;
+    });
+  }, [sanitizePoints]);
+
+  // Initialize Leaflet Map - EXTREMELY STABLE INITIALIZATION
+  // Must NOT depend on any volatile props to prevent re-centering.
   React.useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -120,55 +139,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       })
       .addTo(map);
 
-      // Initialize Geoman with hidden toolbar
-      // @ts-ignore
-      map.pm.addControls({
-        position: 'topleft',
-        drawMarker: false,
-        drawPolyline: false,
-        drawRectangle: false,
-        drawPolygon: false,
-        drawCircle: false,
-        drawCircleMarker: false,
-        drawText: false,
-        editMode: false,
-        dragMode: false,
-        cutPolygon: false,
-        removalMode: false,
-        oneBlock: true,
-      });
-
-      // Handle Geoman creation events to trigger app modals
-      map.on('pm:create', (e: any) => {
-        const layer = e.layer;
-        const shape = e.shape;
-
-        if (shape === 'Polygon' || shape === 'Rectangle') {
-          const latlngs = layer.getLatLngs()[0];
-          // Leaflet-Geoman sometimes returns nested arrays for polygons
-          const flatLatLngs = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
-          const points = flatLatLngs.map((ll: any) => [ll.lat, ll.lng]);
-          onFinishDrawArea(points);
-          layer.remove();
-        } else if (shape === 'Polyline') {
-          const latlngs = layer.getLatLngs();
-          const points = latlngs.map((ll: L.LatLng) => [ll.lat, ll.lng]);
-          onFinishDrawRoute(points);
-          layer.remove();
-        }
-      });
-
-      // Set global path options for new drawings
-      // @ts-ignore
-      map.pm.setGlobalOptions({
-        pathOptions: {
-          color: '#3b82f6',
-          fillColor: '#3b82f6',
-          fillOpacity: 0.4,
-          weight: 3,
-        }
-      });
-
       // Use standard OpenStreetMap tiles
       const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
@@ -185,13 +155,14 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       draftLayerRef.current = L.layerGroup().addTo(map);
 
       mapRef.current = map;
-      invalidateMapSize();
 
       // Handle ResizeObserver to keep leaflet container sized correctly
       const resizeObserver = new ResizeObserver(() => {
         invalidateMapSize();
       });
       resizeObserver.observe(containerRef.current);
+
+      invalidateMapSize();
 
       return () => {
         resizeObserver.disconnect();
@@ -203,24 +174,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     } catch (err) {
       console.error('Error initializing Leaflet map:', err);
     }
-  }, [invalidateMapSize, onFinishDrawArea, onFinishDrawRoute]);
-
-  // Handle programmatic drawing activation based on drawMode prop
-  React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    if (drawMode === 'area') {
-      // @ts-ignore
-      map.pm.enableDraw('Polygon');
-    } else if (drawMode === 'route') {
-      // @ts-ignore
-      map.pm.enableDraw('Polyline');
-    } else {
-      // @ts-ignore
-      map.pm.disableDraw();
-    }
-  }, [drawMode]);
+  }, [invalidateMapSize]); // Dependency array MUST be kept to a bare minimum
 
   // Handle map clicks/taps
   React.useEffect(() => {
@@ -230,7 +184,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     const handleMapClick = (e: L.LeafletMouseEvent) => {
       if (!e.latlng) return;
 
-      if (armedResourceId && onPlaceArmedResource) {
+      if (drawMode !== 'none') {
+        onMapClickDuringDraw(e.latlng.lat, e.latlng.lng);
+      } else if (armedResourceId && onPlaceArmedResource) {
         onPlaceArmedResource(e.latlng.lat, e.latlng.lng);
       }
     };
@@ -239,7 +195,67 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     return () => {
       map.off('click', handleMapClick);
     };
-  }, [armedResourceId, onPlaceArmedResource]);
+  }, [drawMode, onMapClickDuringDraw, armedResourceId, onPlaceArmedResource]);
+
+  // Render Draft Drawing Layer
+  React.useEffect(() => {
+    const draftGroup = draftLayerRef.current;
+    if (!draftGroup) return;
+
+    draftGroup.clearLayers();
+
+    if (drawMode !== 'none' && draftPoints.length > 0) {
+      const validPoints = dedupePoints(draftPoints);
+
+      try {
+        // Draw point markers
+        validPoints.forEach((pt, index) => {
+          const circle = L.circleMarker(pt, {
+            radius: 5,
+            color: '#ffffff',
+            fillColor: drawMode === 'area' ? '#3b82f6' : '#10b981',
+            fillOpacity: 1,
+            weight: 2,
+          });
+          circle.bindTooltip(`Pt ${index + 1}`, {
+            permanent: true,
+            direction: 'top',
+            className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow'
+          });
+          draftGroup.addLayer(circle);
+        });
+
+        if (drawMode === 'route' && validPoints.length >= 2) {
+          const polyline = L.polyline(validPoints, {
+            color: '#10b981',
+            weight: 4,
+            dashArray: '6, 6',
+          });
+          draftGroup.addLayer(polyline);
+        } else if (drawMode === 'area') {
+          if (validPoints.length === 2) {
+            const polyline = L.polyline(validPoints, {
+              color: '#3b82f6',
+              weight: 3,
+              dashArray: '4, 4',
+            });
+            draftGroup.addLayer(polyline);
+          } else if (validPoints.length >= 3) {
+            const polygon = L.polygon(validPoints, {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.25,
+              weight: 2,
+              dashArray: '4, 4',
+            });
+            draftGroup.addLayer(polygon);
+          }
+        }
+      } catch (err) {
+        console.error('Error drawing draft shape:', err);
+      }
+    }
+  }, [drawMode, draftPoints, dedupePoints]);
 
   // Render Operational Area Divisions
   React.useEffect(() => {
@@ -290,10 +306,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             weight: 2.5,
           }).addTo(map);
 
-          const tooltipHtml = '<div class="font-sans text-xs">' +
-            '<strong class="font-bold text-white block uppercase">' + areaData.name + '</strong>' +
-            (areaData.notes ? '<span class="text-[10px] text-slate-300 block">' + areaData.notes + '</span>' : '') +
-            '</div>';
+          const tooltipHtml = \`<div class="font-sans text-xs">
+              <strong class="font-bold text-white block uppercase">\${areaData.name}</strong>
+              \${areaData.notes ? \`<span class="text-[10px] text-slate-300 block">\${areaData.notes}</span>\` : ''}
+            </div>\`;
 
           polygon.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' });
 
@@ -359,10 +375,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: routeData.isDashed ? '8, 8' : undefined,
           }).addTo(map);
 
-          const tooltipHtml = '<div class="font-sans text-xs">' +
-            '<strong class="font-bold text-white block">' + routeData.name + '</strong>' +
-            '<span class="text-[10px] text-slate-300 block capitalize">' + routeData.type + ' Corridor</span>' +
-            '</div>';
+          const tooltipHtml = \`<div class="font-sans text-xs">
+              <strong class="font-bold text-white block">\${routeData.name}</strong>
+              <span class="text-[10px] text-slate-300 block capitalize">\${routeData.type} Corridor</span>
+            </div>\`;
 
           polyline.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' });
 
@@ -394,7 +410,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [modalsOpen, armedResourceId, showHazards, selectedMunicipalityCoord]);
+  }, [modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
   // Handle selected municipality pan/flyTo
   React.useEffect(() => {
@@ -429,10 +445,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: '5, 5',
           }).addTo(map);
 
-          const tooltipHtml = '<div class="font-sans">' +
-            '<strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">' + hazard.name + '</strong>' +
-            '<span class="text-[11px] text-slate-700">' + hazard.description + '</span>' +
-            '</div>';
+          const tooltipHtml = \`<div class="font-sans">
+              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">\${hazard.name}</strong>
+              <span class="text-[11px] text-slate-700">\${hazard.description}</span>
+            </div>\`;
 
           polygon.bindTooltip(tooltipHtml, { sticky: true });
 
@@ -555,7 +571,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         onDrop={handleDrop}
         className="absolute inset-0 w-full h-full"
         style={{
-          cursor: armedResourceId ? 'crosshair' : 'grab',
+          cursor: drawMode !== 'none' || armedResourceId ? 'crosshair' : 'grab',
           zIndex: 0
         }}
       />

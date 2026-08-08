@@ -41,6 +41,7 @@ const Index = () => {
 
   // Map Drawing Mode
   const [drawMode, setDrawMode] = useState<'none' | 'area' | 'route'>('none');
+  const [draftPoints, setDraftPoints] = useState<[number, number][]>([]);
 
   // Tap-to-place mode — fallback for touch devices, where HTML5
   // drag-and-drop (used for desktop placement) does not fire at all.
@@ -93,10 +94,10 @@ const Index = () => {
     });
 
     const newMarker: PrepositionedMarker = {
-      id: `marker-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: \`marker-\${Date.now()}-\${Math.random().toString(36).substring(2, 6)}\`,
       resourceTypeId,
-      title: `${resourceDef.defaultCallsign}`,
-      notes: `Prepositioned in ${closestTown}. Edit notes to specify details.`,
+      title: \`\${resourceDef.defaultCallsign}\`,
+      notes: \`Prepositioned in \${closestTown}. Edit notes to specify details.\`,
       lat,
       lng,
       status: 'ready',
@@ -108,7 +109,7 @@ const Index = () => {
     setMarkers((prev) => [...prev, newMarker]);
     setSelectedMarker(newMarker);
     setIsMarkerModalOpen(true);
-    showSuccess(`Added ${resourceDef.name} at coordinates [${lat.toFixed(3)}, ${lng.toFixed(3)}]`);
+    showSuccess(\`Added \${resourceDef.name} at coordinates [\${lat.toFixed(3)}, \${lng.toFixed(3)}]\`);
   };
 
   // Drag marker end
@@ -124,6 +125,7 @@ const Index = () => {
     setArmedResourceId((prev) => (prev === resourceTypeId ? null : resourceTypeId));
     // Placement and area/route drawing are mutually exclusive modes.
     setDrawMode('none');
+    setDraftPoints([]);
   }, []);
 
   // Place the armed resource at a tapped map location. Stays armed
@@ -137,37 +139,78 @@ const Index = () => {
     [armedResourceId]
   );
 
+  // Handle Map Drawing Clicks
+  const handleMapClickDuringDraw = useCallback((lat: number, lng: number) => {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return;
+
+    setDraftPoints((prev) => {
+      // Reject a click that lands on (effectively) the same spot as the
+      // last point. Duplicate/near-duplicate consecutive points create
+      // zero-length polygon/polyline segments, which is a documented
+      // source of Leaflet renderer errors during subsequent pan/zoom —
+      // errors that happen inside Leaflet's own event loop, outside React,
+      // and can leave the map visually broken until a full page reload.
+      const last = prev[prev.length - 1];
+      if (last && Math.hypot(last[0] - lat, last[1] - lng) < 1e-6) {
+        return prev;
+      }
+      return [...prev, [lat, lng]];
+    });
+  }, []);
+
   // Finish Area Drawing
-  const handleFinishDrawArea = (points: [number, number][]) => {
+  const handleFinishDrawArea = () => {
+    const validPoints = draftPoints.filter(
+      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+    );
+
+    if (validPoints.length < 3) {
+      showError('An area division requires at least 3 valid points on the map.');
+      return;
+    }
+
     const newArea: OperationalArea = {
-      id: `area-${Date.now()}`,
-      name: `Division ${String.fromCharCode(65 + areas.length)}`,
+      id: \`area-\${Date.now()}\`,
+      name: \`Division \${String.fromCharCode(65 + areas.length)}\`,
       color: '#3b82f6',
       opacity: 0.3,
-      points: points,
+      points: validPoints,
       notes: 'Operational Area Division',
       updatedAt: new Date().toISOString(),
     };
 
     setSelectedArea(newArea);
     setIsAreaModalOpen(true);
+    setDrawMode('none');
+    setDraftPoints([]);
   };
 
   // Finish Route Drawing
-  const handleFinishDrawRoute = (points: [number, number][]) => {
+  const handleFinishDrawRoute = () => {
+    const validPoints = draftPoints.filter(
+      (p) => Array.isArray(p) && p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])
+    );
+
+    if (validPoints.length < 2) {
+      showError('A route requires at least 2 valid points on the map.');
+      return;
+    }
+
     const newRoute: TacticalRoute = {
-      id: `route-${Date.now()}`,
-      name: `Route ${routes.length + 1}`,
+      id: \`route-\${Date.now()}\`,
+      name: \`Route \${routes.length + 1}\`,
       type: 'evacuation',
       color: '#10b981',
       isDashed: false,
-      points: points,
+      points: validPoints,
       notes: 'Primary Traffic Flow Corridor',
       updatedAt: new Date().toISOString(),
     };
 
     setSelectedRoute(newRoute);
     setIsRouteModalOpen(true);
+    setDrawMode('none');
+    setDraftPoints([]);
   };
 
   // Save Area
@@ -179,7 +222,7 @@ const Index = () => {
       }
       return [...prev, updatedArea];
     });
-    showSuccess(`Saved area "${updatedArea.name}"`);
+    showSuccess(\`Saved area "\${updatedArea.name}"\`);
   };
 
   // Delete Area
@@ -197,7 +240,7 @@ const Index = () => {
       }
       return [...prev, updatedRoute];
     });
-    showSuccess(`Saved route "${updatedRoute.name}"`);
+    showSuccess(\`Saved route "\${updatedRoute.name}"\`);
   };
 
   // Delete Route
@@ -209,7 +252,7 @@ const Index = () => {
   // Save Plan
   const handleSavePlan = () => {
     const plan: PrepositionPlan = {
-      id: `plan-${Date.now()}`,
+      id: \`plan-\${Date.now()}\`,
       title: planTitle,
       description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
@@ -221,7 +264,7 @@ const Index = () => {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
-      showSuccess(`Plan "${planTitle}" saved with ${markers.length} markers, ${areas.length} areas, and ${routes.length} routes!`);
+      showSuccess(\`Plan "\${planTitle}" saved with \${markers.length} markers, \${areas.length} areas, and \${routes.length} routes!\`);
     } catch (e) {
       showError('Failed to save plan to storage.');
     }
@@ -233,6 +276,7 @@ const Index = () => {
       setMarkers([]);
       setAreas([]);
       setRoutes([]);
+      setDraftPoints([]);
       setDrawMode('none');
       localStorage.removeItem(STORAGE_KEY);
       showSuccess('Prepositioning map cleared. Starting blank.');
@@ -292,7 +336,7 @@ const Index = () => {
         setRoutes(importedRoutes);
 
         showSuccess(
-          `Imported ${importedMarkers.length} markers, ${importedAreas.length} areas, and ${importedRoutes.length} routes.`
+          \`Imported \${importedMarkers.length} markers, \${importedAreas.length} areas, and \${importedRoutes.length} routes.\`
         );
       } catch (err) {
         console.error('Failed to import plan:', err);
@@ -306,7 +350,7 @@ const Index = () => {
   // Export JSON
   const handleExportJSON = () => {
     const plan: PrepositionPlan = {
-      id: `plan-${Date.now()}`,
+      id: \`plan-\${Date.now()}\`,
       title: planTitle,
       description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
@@ -319,30 +363,30 @@ const Index = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(plan, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${planTitle.replace(/\s+/g, '_')}_plan.json`);
+    downloadAnchor.setAttribute('download', \`\${planTitle.replace(/\s+/g, '_')}_plan.json\`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
     showSuccess('Preposition Plan exported to JSON.');
   };
 
-  const handleSelectAreaFromList = (area: OperationalArea) => {
+  const handleSelectAreaFromList = useCallback((area: OperationalArea) => {
     setSelectedArea(area);
     setIsAreaModalOpen(true);
     if (area.points && area.points.length > 0) {
       const firstPt = area.points[0];
       setSelectedMunicipalityCoord([firstPt[0], firstPt[1]]);
     }
-  };
+  }, []);
 
-  const handleSelectRouteFromList = (route: TacticalRoute) => {
+  const handleSelectRouteFromList = useCallback((route: TacticalRoute) => {
     setSelectedRoute(route);
     setIsRouteModalOpen(true);
     if (route.points && route.points.length > 0) {
       const firstPt = route.points[0];
       setSelectedMunicipalityCoord([firstPt[0], firstPt[1]]);
     }
-  };
+  }, []);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans">
@@ -368,10 +412,12 @@ const Index = () => {
         drawMode={drawMode}
         onStartDrawArea={() => {
           setDrawMode((prev) => (prev === 'area' ? 'none' : 'area'));
+          setDraftPoints([]);
           setArmedResourceId(null);
         }}
         onStartDrawRoute={() => {
           setDrawMode((prev) => (prev === 'route' ? 'none' : 'route'));
+          setDraftPoints([]);
           setArmedResourceId(null);
         }}
       />
@@ -391,6 +437,51 @@ const Index = () => {
         />
 
         <main className="flex-1 h-full min-h-0 relative">
+          {/* Floating Drawing Control Overlay */}
+          {drawMode !== 'none' && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 print:hidden">
+              <div className="text-xs">
+                <span className="font-bold text-amber-400 block uppercase">
+                  {drawMode === 'area' ? 'Drawing Area Division' : 'Drawing Tactical Route'}
+                </span>
+                <span className="text-[11px] text-slate-300">
+                  Click on map to place points ({draftPoints.length} points placed)
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-1.5 border-l border-slate-800 pl-3">
+                <Button
+                  size="sm"
+                  onClick={drawMode === 'area' ? handleFinishDrawArea : handleFinishDrawRoute}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs font-bold gap-1"
+                >
+                  <Check className="w-3.5 h-3.5" /> Finish
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDraftPoints([])}
+                  className="bg-slate-800 border-slate-700 text-slate-300 h-7 text-xs gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Clear Points
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setDrawMode('none');
+                    setDraftPoints([]);
+                  }}
+                  className="text-slate-400 hover:text-white h-7 text-xs p-1"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Floating Tap-to-Place Overlay (mobile fallback for drag & drop) */}
           {armedResourceId && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 print:hidden">
@@ -442,14 +533,10 @@ const Index = () => {
               selectedMunicipalityCoord={selectedMunicipalityCoord}
               baseIconSize={iconSize}
               drawMode={drawMode}
-              onFinishDrawArea={(points) => {
-                handleFinishDrawArea(points);
-                setDrawMode('none');
-              }}
-              onFinishDrawRoute={(points) => {
-                handleFinishDrawRoute(points);
-                setDrawMode('none');
-              }}
+              draftPoints={draftPoints}
+              onMapClickDuringDraw={handleMapClickDuringDraw}
+              onFinishDrawArea={handleFinishDrawArea}
+              onFinishDrawRoute={handleFinishDrawRoute}
               modalsOpen={isMarkerModalOpen || isAreaModalOpen || isRouteModalOpen || isSummaryOpen}
             />
           </Suspense>
@@ -463,7 +550,7 @@ const Index = () => {
         onClose={() => setIsMarkerModalOpen(false)}
         onSave={(updated) => {
           setMarkers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
-          showSuccess(`Updated ${updated.title}`);
+          showSuccess(\`Updated \${updated.title}\`);
         }}
         onDelete={(id) => {
           setMarkers((prev) => prev.filter((m) => m.id !== id));
