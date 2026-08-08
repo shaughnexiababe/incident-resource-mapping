@@ -21,6 +21,7 @@ export interface MapContainerProps {
   showHazards: boolean;
   selectedMunicipalityCoord: [number, number] | null;
   baseIconSize: number;
+  drawMode: 'none' | 'area' | 'route';
   onFinishDrawArea: (points: [number, number][]) => void;
   onFinishDrawRoute: (points: [number, number][]) => void;
   /** Resource id currently "armed" for tap-to-place, or null. This is the
@@ -49,6 +50,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   showHazards,
   selectedMunicipalityCoord,
   baseIconSize,
+  drawMode,
   onFinishDrawArea,
   onFinishDrawRoute,
   armedResourceId = null,
@@ -138,21 +140,21 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       })
       .addTo(map);
 
-      // Initialize Geoman Controls
+      // Initialize Geoman with hidden toolbar
       // @ts-ignore
       map.pm.addControls({
         position: 'topleft',
         drawMarker: false,
-        drawPolyline: true,
-        drawRectangle: true,
-        drawPolygon: true,
+        drawPolyline: false,
+        drawRectangle: false,
+        drawPolygon: false,
         drawCircle: false,
         drawCircleMarker: false,
-        drawText: true,
-        editMode: true,
-        dragMode: true,
+        drawText: false,
+        editMode: false,
+        dragMode: false,
         cutPolygon: false,
-        removalMode: true,
+        removalMode: false,
         oneBlock: true,
       });
 
@@ -163,11 +165,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
         if (shape === 'Polygon' || shape === 'Rectangle') {
           const latlngs = layer.getLatLngs()[0];
-          // Leaflet-Geoman sometimes returns nested arrays for polygons
           const flatLatLngs = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
           const points = flatLatLngs.map((ll: any) => [ll.lat, ll.lng]);
           onFinishDrawArea(points);
-          // Remove the temporary Geoman layer; the app state will re-render its own
           layer.remove();
         } else if (shape === 'Polyline') {
           const latlngs = layer.getLatLngs();
@@ -227,6 +227,28 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
   // placement mode (the mobile fallback for drag-and-drop, which never
   // fires on touch devices).
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+  // Handle programmatic drawing activation based on drawMode prop
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (drawMode === 'area') {
+      // @ts-ignore
+      map.pm.enableDraw('Polygon');
+    } else if (drawMode === 'route') {
+      // @ts-ignore
+      map.pm.enableDraw('Polyline');
+    } else {
+      // @ts-ignore
+      map.pm.disableDraw();
+    }
+  }, [drawMode]);
+
+  // Handle map clicks/taps
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;

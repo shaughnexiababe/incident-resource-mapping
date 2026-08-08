@@ -39,6 +39,9 @@ const Index = () => {
   const [isRouteModalOpen, setIsRouteModalOpen] = useState<boolean>(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false);
 
+  // Map Drawing Mode
+  const [drawMode, setDrawMode] = useState<'none' | 'area' | 'route'>('none');
+
   // Tap-to-place mode — fallback for touch devices, where HTML5
   // drag-and-drop (used for desktop placement) does not fire at all.
   const [armedResourceId, setArmedResourceId] = useState<ResourceTypeId | null>(null);
@@ -119,6 +122,8 @@ const Index = () => {
   // Arm/disarm a resource for tap-to-place (mobile fallback for drag/drop)
   const handleArmResource = useCallback((resourceTypeId: ResourceTypeId) => {
     setArmedResourceId((prev) => (prev === resourceTypeId ? null : resourceTypeId));
+    // Placement and area/route drawing are mutually exclusive modes.
+    setDrawMode('none');
   }, []);
 
   // Place the armed resource at a tapped map location. Stays armed
@@ -228,6 +233,7 @@ const Index = () => {
       setMarkers([]);
       setAreas([]);
       setRoutes([]);
+      setDrawMode('none');
       localStorage.removeItem(STORAGE_KEY);
       showSuccess('Prepositioning map cleared. Starting blank.');
     }
@@ -359,6 +365,15 @@ const Index = () => {
         onToggleSummary={() => setIsSummaryOpen(true)}
         iconSize={iconSize}
         setIconSize={setIconSize}
+        drawMode={drawMode}
+        onStartDrawArea={() => {
+          setDrawMode((prev) => (prev === 'area' ? 'none' : 'area'));
+          setArmedResourceId(null);
+        }}
+        onStartDrawRoute={() => {
+          setDrawMode((prev) => (prev === 'route' ? 'none' : 'route'));
+          setArmedResourceId(null);
+        }}
       />
 
       {/* Main Workspace Layout */}
@@ -426,8 +441,15 @@ const Index = () => {
               showHazards={showHazards}
               selectedMunicipalityCoord={selectedMunicipalityCoord}
               baseIconSize={iconSize}
-              onFinishDrawArea={handleFinishDrawArea}
-              onFinishDrawRoute={handleFinishDrawRoute}
+              drawMode={drawMode}
+              onFinishDrawArea={(points) => {
+                handleFinishDrawArea(points);
+                setDrawMode('none');
+              }}
+              onFinishDrawRoute={(points) => {
+                handleFinishDrawRoute(points);
+                setDrawMode('none');
+              }}
               modalsOpen={isMarkerModalOpen || isAreaModalOpen || isRouteModalOpen || isSummaryOpen}
             />
           </Suspense>

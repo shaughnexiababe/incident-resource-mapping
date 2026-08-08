@@ -23,6 +23,9 @@ interface NavbarProps {
   onToggleSummary: () => void;
   iconSize: number;
   setIconSize: (size: number) => void;
+  drawMode: 'none' | 'area' | 'route';
+  onStartDrawArea: () => void;
+  onStartDrawRoute: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -43,6 +46,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleSummary,
   iconSize,
   setIconSize,
+  drawMode,
+  onStartDrawArea,
+  onStartDrawRoute,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +128,38 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center space-x-2">
+        {/* Draw Area Division Button */}
+        <Button
+          variant={drawMode === 'area' ? 'default' : 'outline'}
+          size="sm"
+          onClick={onStartDrawArea}
+          className={`h-8 text-xs font-semibold gap-1.5 ${
+            drawMode === 'area'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : 'border-slate-700 text-slate-300 bg-slate-800 hover:text-white'
+          }`}
+          title="Highlight operational area division sector"
+        >
+          <Spline className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden xl:inline">+ Area Division</span>
+        </Button>
+
+        {/* Draw Route Button */}
+        <Button
+          variant={drawMode === 'route' ? 'default' : 'outline'}
+          size="sm"
+          onClick={onStartDrawRoute}
+          className={`h-8 text-xs font-semibold gap-1.5 ${
+            drawMode === 'route'
+              ? 'bg-emerald-600 text-white border-emerald-500'
+              : 'border-slate-700 text-slate-300 bg-slate-800 hover:text-white'
+          }`}
+          title="Draw evacuation or traffic rerouting lines"
+        >
+          <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden xl:inline">+ Traffic Route</span>
+        </Button>
+
         {/* Icon Size Selector */}
         <div className="flex items-center space-x-1.5 bg-slate-800/90 px-2 py-1 rounded border border-slate-700 text-xs">
           <ZoomIn className="w-3.5 h-3.5 text-slate-400" />
