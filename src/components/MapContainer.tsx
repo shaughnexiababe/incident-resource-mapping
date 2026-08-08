@@ -106,7 +106,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, [sanitizePoints]);
 
   // Initialize Leaflet Map - EXTREMELY STABLE INITIALIZATION
-  // Must NOT depend on any volatile props to prevent re-centering.
   React.useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -119,9 +118,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Add Search / Geocoder Control using OpenStreetMap Nominatim
-      // @ts-ignore
-      const geocoder = L.Control.geocoder({
+      const geocoder = (L.Control as any).geocoder({
         defaultMarkGeocode: false,
         placeholder: "Search location...",
         collapsed: true,
@@ -139,7 +136,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       })
       .addTo(map);
 
-      // Use standard OpenStreetMap tiles
       const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
       tileLayerRef.current = L.tileLayer(osmUrl, {
@@ -151,12 +147,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         setCurrentZoom(map.getZoom());
       });
 
-      // Draft layer group for interactive drawing
       draftLayerRef.current = L.layerGroup().addTo(map);
 
       mapRef.current = map;
 
-      // Handle ResizeObserver to keep leaflet container sized correctly
       const resizeObserver = new ResizeObserver(() => {
         invalidateMapSize();
       });
@@ -174,7 +168,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     } catch (err) {
       console.error('Error initializing Leaflet map:', err);
     }
-  }, [invalidateMapSize]); // Dependency array MUST be kept to a bare minimum
+  }, [invalidateMapSize]);
 
   // Handle map clicks/taps
   React.useEffect(() => {
@@ -208,7 +202,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       const validPoints = dedupePoints(draftPoints);
 
       try {
-        // Draw point markers
         validPoints.forEach((pt, index) => {
           const circle = L.circleMarker(pt, {
             radius: 5,
@@ -217,7 +210,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             fillOpacity: 1,
             weight: 2,
           });
-          circle.bindTooltip(`Pt ${index + 1}`, {
+          circle.bindTooltip("Pt " + (index + 1), {
             permanent: true,
             direction: 'top',
             className: 'text-[9px] bg-slate-900 text-white font-mono px-1 py-0 border-0 shadow'
@@ -264,7 +257,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     const currentAreaIds = new Set(areas.map((a) => a.id));
 
-    // Remove deleted area polygons
     savedAreaPolygonsRef.current.forEach((polygon, id) => {
       if (!currentAreaIds.has(id)) {
         polygon.remove();
@@ -272,7 +264,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }
     });
 
-    // Add or update areas
     areas.forEach((areaData) => {
       if (!areaData.points || areaData.points.length < 3) return;
       const validPoints = areaData.points.filter(
@@ -290,7 +281,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             fillColor: areaData.color || '#3b82f6',
             fillOpacity: areaData.opacity ?? 0.3,
           });
-          // Re-bind click event cleanly
           existing.off('click');
           existing.on('click', (e: L.LeafletMouseEvent) => {
             if (e.originalEvent) {
@@ -306,10 +296,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             weight: 2.5,
           }).addTo(map);
 
-          const tooltipHtml = \`<div class="font-sans text-xs">
-              <strong class="font-bold text-white block uppercase">\${areaData.name}</strong>
-              \${areaData.notes ? \`<span class="text-[10px] text-slate-300 block">\${areaData.notes}</span>\` : ''}
-            </div>\`;
+          const tooltipHtml = '<div class="font-sans text-xs">' +
+            '<strong class="font-bold text-white block uppercase">' + areaData.name + '</strong>' +
+            (areaData.notes ? '<span class="text-[10px] text-slate-300 block">' + areaData.notes + '</span>' : '') +
+            '</div>';
 
           polygon.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' });
 
@@ -335,7 +325,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
     const currentRouteIds = new Set(routes.map((r) => r.id));
 
-    // Remove deleted routes
     savedRoutePolylinesRef.current.forEach((polyline, id) => {
       if (!currentRouteIds.has(id)) {
         polyline.remove();
@@ -343,7 +332,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }
     });
 
-    // Add or update routes
     routes.forEach((routeData) => {
       if (!routeData.points || routeData.points.length < 2) return;
       const validPoints = routeData.points.filter(
@@ -360,7 +348,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             color: routeData.color || '#10b981',
             dashArray: routeData.isDashed ? '8, 8' : undefined,
           });
-          // Re-bind click cleanly
           existing.off('click');
           existing.on('click', (e: L.LeafletMouseEvent) => {
             if (e.originalEvent) {
@@ -375,10 +362,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: routeData.isDashed ? '8, 8' : undefined,
           }).addTo(map);
 
-          const tooltipHtml = \`<div class="font-sans text-xs">
-              <strong class="font-bold text-white block">\${routeData.name}</strong>
-              <span class="text-[10px] text-slate-300 block capitalize">\${routeData.type} Corridor</span>
-            </div>\`;
+          const tooltipHtml = '<div class="font-sans text-xs">' +
+            '<strong class="font-bold text-white block">' + routeData.name + '</strong>' +
+            '<span class="text-[10px] text-slate-300 block capitalize">' + routeData.type + ' Corridor</span>' +
+            '</div>';
 
           polyline.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' });
 
@@ -397,11 +384,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
   }, [routes, onRouteSelect]);
 
-  // Force Leaflet to re-measure its container whenever relevant state changes
   React.useEffect(() => {
     if (mapRef.current) {
-      // Use both requestAnimationFrame and a slightly longer timeout to
-      // catch potential flexbox layout shifts after React re-renders.
       requestAnimationFrame(() => {
         if (mapRef.current) mapRef.current.invalidateSize();
       });
@@ -410,9 +394,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [modalsOpen, drawMode, armedResourceId, showHazards, selectedMunicipalityCoord]);
+  }, [modalsOpen, armedResourceId, showHazards, selectedMunicipalityCoord]);
 
-  // Handle selected municipality pan/flyTo
   React.useEffect(() => {
     if (selectedMunicipalityCoord && mapRef.current) {
       mapRef.current.flyTo(selectedMunicipalityCoord, 14, {
@@ -421,7 +404,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [selectedMunicipalityCoord]);
 
-  // Handle Hazard Layers
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -445,10 +427,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: '5, 5',
           }).addTo(map);
 
-          const tooltipHtml = \`<div class="font-sans">
-              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">\${hazard.name}</strong>
-              <span class="text-[11px] text-slate-700">\${hazard.description}</span>
-            </div>\`;
+          const tooltipHtml = '<div class="font-sans">' +
+            '<strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">' + hazard.name + '</strong>' +
+            '<span class="text-[11px] text-slate-700">' + hazard.description + '</span>' +
+            '</div>';
 
           polygon.bindTooltip(tooltipHtml, { sticky: true });
 
@@ -460,11 +442,9 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [showHazards]);
 
-  // Dynamic zoom factor multiplier
   const zoomFactor = Math.max(0.75, Math.min(1.5, 1 + (currentZoom - DEFAULT_ZOOM) * 0.08));
   const effectiveSize = Math.round(baseIconSize * zoomFactor);
 
-  // Update Markers
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -479,15 +459,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     });
 
     markers.forEach((markerData) => {
-      // Guard against malformed coordinates (e.g. from an old/corrupted
-      // saved plan) before handing them to Leaflet.
       if (
         typeof markerData.lat !== 'number' ||
         typeof markerData.lng !== 'number' ||
         !Number.isFinite(markerData.lat) ||
         !Number.isFinite(markerData.lng)
       ) {
-        console.error('Skipping marker with invalid coordinates:', markerData);
         return;
       }
 
@@ -510,7 +487,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }).addTo(map);
 
           leafletMarker.on('click', (e) => {
-            // Stop propagation to prevent map click from triggering
             if (e.originalEvent) {
               e.originalEvent.stopPropagation();
             }
@@ -525,8 +501,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           leafletMarkersRef.current.set(markerData.id, leafletMarker);
         }
       } catch (err) {
-        // A single bad marker (e.g. an unrecognized resourceTypeId from an
-        // older saved plan) must never take down the whole map render.
         console.error('Error rendering marker:', markerData.id, err);
       }
     });
@@ -576,7 +550,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         }}
       />
 
-      {/* Quick Recenter Button */}
       <button
         onClick={handleRecenter}
         className="absolute bottom-6 right-4 z-[400] bg-slate-900/90 hover:bg-slate-800 text-white p-2.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-1.5 text-xs font-semibold backdrop-blur-sm transition-all"
