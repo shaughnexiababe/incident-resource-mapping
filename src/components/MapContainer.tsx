@@ -290,13 +290,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             weight: 2.5,
           }).addTo(map);
 
-          polygon.bindTooltip(
-            \`<div class="font-sans text-xs">
-              <strong class="font-bold text-white block uppercase">\${areaData.name}</strong>
-              \${areaData.notes ? \`<span class="text-[10px] text-slate-300 block">\${areaData.notes}</span>\` : ''}
-            </div>\`,
-            { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' }
-          );
+          const tooltipHtml = '<div class="font-sans text-xs">' +
+            '<strong class="font-bold text-white block uppercase">' + areaData.name + '</strong>' +
+            (areaData.notes ? '<span class="text-[10px] text-slate-300 block">' + areaData.notes + '</span>' : '') +
+            '</div>';
+
+          polygon.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' });
 
           polygon.on('click', (e: L.LeafletMouseEvent) => {
             if (e.originalEvent) {
@@ -360,13 +359,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: routeData.isDashed ? '8, 8' : undefined,
           }).addTo(map);
 
-          polyline.bindTooltip(
-            \`<div class="font-sans text-xs">
-              <strong class="font-bold text-white block">\${routeData.name}</strong>
-              <span class="text-[10px] text-slate-300 block capitalize">\${routeData.type} Corridor</span>
-            </div>\`,
-            { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' }
-          );
+          const tooltipHtml = '<div class="font-sans text-xs">' +
+            '<strong class="font-bold text-white block">' + routeData.name + '</strong>' +
+            '<span class="text-[10px] text-slate-300 block capitalize">' + routeData.type + ' Corridor</span>' +
+            '</div>';
+
+          polyline.bindTooltip(tooltipHtml, { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' });
 
           polyline.on('click', (e: L.LeafletMouseEvent) => {
             if (e.originalEvent) {
@@ -431,13 +429,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             dashArray: '5, 5',
           }).addTo(map);
 
-          polygon.bindTooltip(
-            \`<div class="font-sans">
-              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">\${hazard.name}</strong>
-              <span class="text-[11px] text-slate-700">\${hazard.description}</span>
-            </div>\`,
-            { sticky: true }
-          );
+          const tooltipHtml = '<div class="font-sans">' +
+            '<strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">' + hazard.name + '</strong>' +
+            '<span class="text-[11px] text-slate-700">' + hazard.description + '</span>' +
+            '</div>';
+
+          polygon.bindTooltip(tooltipHtml, { sticky: true });
 
           hazardPolygonsRef.current.push(polygon);
         } catch (e) {
