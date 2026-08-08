@@ -87,26 +87,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const sanitizePoints = React.useCallback((points: [number, number][]) => {
-    return points.filter(
-      (point): point is [number, number] =>
-        Array.isArray(point) &&
-        point.length === 2 &&
-        Number.isFinite(point[0]) &&
-        Number.isFinite(point[1])
-    );
-  }, []);
-
-  const dedupePoints = React.useCallback((points: [number, number][]) => {
-    const sanitized = sanitizePoints(points);
-    return sanitized.filter((point, index) => {
-      if (index === 0) return true;
-      const prev = sanitized[index - 1];
-      // Check for identical or near-identical consecutive points (approx 10cm distance)
-      return Math.hypot(prev[0] - point[0], prev[1] - point[1]) > 1e-6;
-    });
-  }, [sanitizePoints]);
-
   // Initialize Leaflet Map
   React.useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -165,6 +145,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 
         if (shape === 'Polygon' || shape === 'Rectangle') {
           const latlngs = layer.getLatLngs()[0];
+          // Leaflet-Geoman sometimes returns nested arrays for polygons
           const flatLatLngs = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
           const points = flatLatLngs.map((ll: any) => [ll.lat, ll.lng]);
           onFinishDrawArea(points);
@@ -222,14 +203,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     } catch (err) {
       console.error('Error initializing Leaflet map:', err);
     }
-  }, [invalidateMapSize]);
-
-  // Handle map clicks/taps: drawing mode takes priority, then tap-to-place
-  // placement mode (the mobile fallback for drag-and-drop, which never
-  // fires on touch devices).
-  React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+  }, [invalidateMapSize, onFinishDrawArea, onFinishDrawRoute]);
 
   // Handle programmatic drawing activation based on drawMode prop
   React.useEffect(() => {
@@ -317,10 +291,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }).addTo(map);
 
           polygon.bindTooltip(
-            `<div class="font-sans text-xs">
-              <strong class="font-bold text-white block uppercase">${areaData.name}</strong>
-              ${areaData.notes ? `<span class="text-[10px] text-slate-300 block">${areaData.notes}</span>` : ''}
-            </div>`,
+            \`<div class="font-sans text-xs">
+              <strong class="font-bold text-white block uppercase">\${areaData.name}</strong>
+              \${areaData.notes ? \`<span class="text-[10px] text-slate-300 block">\${areaData.notes}</span>\` : ''}
+            </div>\`,
             { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-2 rounded shadow-lg' }
           );
 
@@ -387,10 +361,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }).addTo(map);
 
           polyline.bindTooltip(
-            `<div class="font-sans text-xs">
-              <strong class="font-bold text-white block">${routeData.name}</strong>
-              <span class="text-[10px] text-slate-300 block capitalize">${routeData.type} Corridor</span>
-            </div>`,
+            \`<div class="font-sans text-xs">
+              <strong class="font-bold text-white block">\${routeData.name}</strong>
+              <span class="text-[10px] text-slate-300 block capitalize">\${routeData.type} Corridor</span>
+            </div>\`,
             { sticky: true, className: 'bg-slate-900 text-white border-slate-700 p-1.5 rounded shadow-lg' }
           );
 
@@ -458,10 +432,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           }).addTo(map);
 
           polygon.bindTooltip(
-            `<div class="font-sans">
-              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">${hazard.name}</strong>
-              <span class="text-[11px] text-slate-700">${hazard.description}</span>
-            </div>`,
+            \`<div class="font-sans">
+              <strong class="text-xs uppercase tracking-wide block font-bold text-amber-800">\${hazard.name}</strong>
+              <span class="text-[11px] text-slate-700">\${hazard.description}</span>
+            </div>\`,
             { sticky: true }
           );
 
