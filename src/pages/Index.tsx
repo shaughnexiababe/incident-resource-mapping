@@ -94,10 +94,10 @@ const Index = () => {
     });
 
     const newMarker: PrepositionedMarker = {
-      id: \`marker-\${Date.now()}-\${Math.random().toString(36).substring(2, 6)}\`,
+      id: "marker-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
       resourceTypeId,
-      title: \`\${resourceDef.defaultCallsign}\`,
-      notes: \`Prepositioned in \${closestTown}. Edit notes to specify details.\`,
+      title: resourceDef.defaultCallsign,
+      notes: "Prepositioned in " + closestTown + ". Edit notes to specify details.",
       lat,
       lng,
       status: 'ready',
@@ -109,7 +109,7 @@ const Index = () => {
     setMarkers((prev) => [...prev, newMarker]);
     setSelectedMarker(newMarker);
     setIsMarkerModalOpen(true);
-    showSuccess(\`Added \${resourceDef.name} at coordinates [\${lat.toFixed(3)}, \${lng.toFixed(3)}]\`);
+    showSuccess("Added " + resourceDef.name + " at coordinates [" + lat.toFixed(3) + ", " + lng.toFixed(3) + "]");
   };
 
   // Drag marker end
@@ -170,8 +170,8 @@ const Index = () => {
     }
 
     const newArea: OperationalArea = {
-      id: \`area-\${Date.now()}\`,
-      name: \`Division \${String.fromCharCode(65 + areas.length)}\`,
+      id: "area-" + Date.now(),
+      name: "Division " + String.fromCharCode(65 + areas.length),
       color: '#3b82f6',
       opacity: 0.3,
       points: validPoints,
@@ -197,8 +197,8 @@ const Index = () => {
     }
 
     const newRoute: TacticalRoute = {
-      id: \`route-\${Date.now()}\`,
-      name: \`Route \${routes.length + 1}\`,
+      id: "route-" + Date.now(),
+      name: "Route " + (routes.length + 1),
       type: 'evacuation',
       color: '#10b981',
       isDashed: false,
@@ -222,7 +222,7 @@ const Index = () => {
       }
       return [...prev, updatedArea];
     });
-    showSuccess(\`Saved area "\${updatedArea.name}"\`);
+    showSuccess("Saved area \"" + updatedArea.name + "\"");
   };
 
   // Delete Area
@@ -240,7 +240,7 @@ const Index = () => {
       }
       return [...prev, updatedRoute];
     });
-    showSuccess(\`Saved route "\${updatedRoute.name}"\`);
+    showSuccess("Saved route \"" + updatedRoute.name + "\"");
   };
 
   // Delete Route
@@ -252,7 +252,7 @@ const Index = () => {
   // Save Plan
   const handleSavePlan = () => {
     const plan: PrepositionPlan = {
-      id: \`plan-\${Date.now()}\`,
+      id: "plan-" + Date.now(),
       title: planTitle,
       description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
@@ -264,7 +264,7 @@ const Index = () => {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
-      showSuccess(\`Plan "\${planTitle}" saved with \${markers.length} markers, \${areas.length} areas, and \${routes.length} routes!\`);
+      showSuccess("Plan \"" + planTitle + "\" saved with " + markers.length + " markers, " + areas.length + " areas, and " + routes.length + " routes!");
     } catch (e) {
       showError('Failed to save plan to storage.');
     }
@@ -336,7 +336,7 @@ const Index = () => {
         setRoutes(importedRoutes);
 
         showSuccess(
-          \`Imported \${importedMarkers.length} markers, \${importedAreas.length} areas, and \${importedRoutes.length} routes.\`
+          "Imported " + importedMarkers.length + " markers, " + importedAreas.length + " areas, and " + importedRoutes.length + " routes."
         );
       } catch (err) {
         console.error('Failed to import plan:', err);
@@ -350,7 +350,7 @@ const Index = () => {
   // Export JSON
   const handleExportJSON = () => {
     const plan: PrepositionPlan = {
-      id: \`plan-\${Date.now()}\`,
+      id: "plan-" + Date.now(),
       title: planTitle,
       description: 'Incident Resource & Prepositioning Operational Plan',
       createdAt: new Date().toISOString(),
@@ -363,7 +363,7 @@ const Index = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(plan, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', \`\${planTitle.replace(/\s+/g, '_')}_plan.json\`);
+    downloadAnchor.setAttribute('download', planTitle.replace(/\s+/g, '_') + "_plan.json");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -535,8 +535,6 @@ const Index = () => {
               drawMode={drawMode}
               draftPoints={draftPoints}
               onMapClickDuringDraw={handleMapClickDuringDraw}
-              onFinishDrawArea={handleFinishDrawArea}
-              onFinishDrawRoute={handleFinishDrawRoute}
               modalsOpen={isMarkerModalOpen || isAreaModalOpen || isRouteModalOpen || isSummaryOpen}
             />
           </Suspense>
@@ -550,7 +548,7 @@ const Index = () => {
         onClose={() => setIsMarkerModalOpen(false)}
         onSave={(updated) => {
           setMarkers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
-          showSuccess(\`Updated \${updated.title}\`);
+          showSuccess("Updated " + updated.title);
         }}
         onDelete={(id) => {
           setMarkers((prev) => prev.filter((m) => m.id !== id));
