@@ -550,6 +550,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         }}
       />
 
+      {/* Quick Recenter Button */}
       <button
         onClick={handleRecenter}
         className="absolute bottom-6 right-4 z-[400] bg-slate-900/90 hover:bg-slate-800 text-white p-2.5 rounded-lg border border-slate-700 shadow-xl flex items-center gap-1.5 text-xs font-semibold backdrop-blur-sm transition-all"

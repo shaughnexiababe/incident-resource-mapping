@@ -53,7 +53,8 @@ export type ResourceTypeId =
   | 'triage_facility'
   | 'distribution_point'
   | 'morgue_temp'
-  | 'decon_station';
+  | 'decon_station'
+  | 'map_label';
 
 export interface ResourceDefinition {
   id: ResourceTypeId;

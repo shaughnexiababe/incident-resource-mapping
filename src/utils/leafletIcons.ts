@@ -460,6 +460,13 @@ export const ENHANCED_ICON_SVGS: Record<string, string> = {
       <path d="M7 8 Q12 10 17 8 M7 12 Q12 14 17 12 M7 16 Q12 18 17 16" stroke="#ffffff" stroke-width="1" fill="none"/>
       <circle cx="12" cy="2" r="1" fill="#06b6d4"/>
     </g>
+  `,
+
+  // Map Text Label
+  map_label: `
+    <g transform="translate(1.5, 1.5) scale(0.88)">
+      <path d="M4 7 V17 M4 7 H12 M4 12 H10 M20 7 V17 M15 7 H20" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
   `
 };
 
@@ -531,6 +538,12 @@ export function createMarkerIcon(
         EOC
       </div>
     `;
+  } else if (resourceTypeId === 'map_label') {
+    markerContentHtml = `
+      <div class="bg-white/90 border-2 border-slate-800 rounded px-2 py-1 shadow-xl whitespace-nowrap min-w-max flex items-center justify-center group-hover:scale-105 transition-transform">
+        <span class="text-slate-900 font-bold text-sm tracking-tight">${title}</span>
+      </div>
+    `;
   } else {
     // Pure icon without circle background for vehicles and personnel
     const enhancedSvg = ENHANCED_ICON_SVGS[resourceTypeId] || '';
@@ -548,12 +561,13 @@ export function createMarkerIcon(
     <div class="relative group cursor-pointer transform hover:scale-110 transition-transform">
       ${markerContentHtml}
 
-      ${quantity > 1 ? `
+      ${quantity > 1 && resourceTypeId !== 'map_label' ? `
         <span class="absolute -top-1 -right-1 bg-slate-900 text-amber-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-amber-400 shadow-md z-10 font-mono">
           x${quantity}
         </span>
       ` : ''}
 
+      ${resourceTypeId !== 'map_label' ? `
       <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 pointer-events-none">
         <div class="bg-slate-900/95 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-2xl whitespace-nowrap border border-slate-700 backdrop-blur-sm">
           <div class="font-bold text-slate-100 flex items-center gap-1.5">
@@ -563,6 +577,7 @@ export function createMarkerIcon(
           <span class="block text-[10px] text-slate-300 font-normal mt-0.5">${resource.name}</span>
         </div>
       </div>
+      ` : ''}
     </div>
   `;
 

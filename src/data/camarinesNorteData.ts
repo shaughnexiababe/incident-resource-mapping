@@ -522,6 +522,16 @@ export const RESOURCE_CATALOG: ResourceDefinition[] = [
     badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
     description: 'Hazmat decontamination and cleanup point',
     defaultCallsign: 'DECON-STN'
+  },
+  {
+    id: 'map_label',
+    name: 'Map Text Label',
+    category: 'logistics',
+    iconName: 'Type',
+    color: '#334155',
+    badgeBg: 'bg-slate-100 text-slate-900 border-slate-300',
+    description: 'Custom text annotation for names, titles, or notes',
+    defaultCallsign: 'NEW LABEL'
   }
 ];
 
